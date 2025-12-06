@@ -15,44 +15,47 @@
     <style>
         body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        /* Animation Badge Top Match */
         .pulse-badge { animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        /* Icônes SVG */
         .icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: middle; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
 
     <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur border-b border-slate-800 p-4 flex justify-between items-center">
         <h1 class="text-xl font-black flex items-center gap-2 text-white">
-            <span class="bg-emerald-600 p-1 rounded">👨‍🍳</span> <span id="app-title">Frigo-Chef DZ</span>
+            <span class="bg-emerald-600 p-1 rounded shadow-lg shadow-emerald-900">👨‍🍳</span> <span id="app-title">Frigo-Chef DZ</span>
         </h1>
         <div class="flex gap-2 items-center">
-            <select id="lang-select" onchange="app.setLang(this.value)" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded px-2 py-1 uppercase">
+            <select id="lang-select" onchange="app.setLang(this.value)" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded px-2 py-1 uppercase outline-none">
                 <option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option>
             </select>
-            <button onclick="app.openAdmin()" class="text-slate-500 hover:text-white">⚙️</button>
+            <button onclick="app.openAdmin()" class="text-slate-500 hover:text-white p-1">⚙️</button>
         </div>
     </div>
 
-    <div id="app-container" class="animate-in"></div>
+    <div id="app-container" class="animate-in min-h-screen"></div>
 
     <div class="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur border-t border-slate-900 flex justify-around p-2 pb-6 z-40 max-w-md mx-auto">
         <button onclick="app.setTab('pantry')" id="btn-pantry" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
             <svg class="icon"><path d="M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><line x1="5" y1="10" x2="19" y2="10"/><path d="M15 2v20"/></svg>
+            <span class="text-[10px] font-bold">Frigo</span>
         </button>
         <button onclick="app.setTab('recipes')" id="btn-recipes" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
             <svg class="icon"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+            <span class="text-[10px] font-bold">Recettes</span>
         </button>
         <button onclick="app.setTab('shop')" id="btn-shop" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
             <div class="relative">
                 <svg class="icon"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                 <span id="shop-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
             </div>
+            <span class="text-[10px] font-bold">Courses</span>
         </button>
     </div>
 
-    <div id="modal-container" class="hidden fixed inset-0 bg-slate-950 z-50 overflow-y-auto"></div>
+    <div id="modal-container" class="hidden fixed inset-0 bg-slate-950 z-50 overflow-y-auto animate-in"></div>
 
     <script>
         // --- DONNÉES PAR DÉFAUT ---
@@ -85,20 +88,20 @@
         ];
 
         const CATS = [
-            { id: 'legume', fr: 'Légumes', ar: 'خضار', en: 'Veg', icon: '🥕' },
-            { id: 'viande', fr: 'Viandes', ar: 'لحوم', en: 'Meat', icon: '🥩' },
-            { id: 'epicerie', fr: 'Épicerie', ar: 'مؤونة', en: 'Pantry', icon: '🌾' },
+            { id: 'legume', fr: 'Légumes & Fruits', ar: 'خضروات وفواكه', en: 'Veg & Fruits', icon: '🥕' },
+            { id: 'viande', fr: 'Viandes & Poissons', ar: 'لحوم وأسماك', en: 'Meat & Fish', icon: '🥩' },
+            { id: 'epicerie', fr: 'Épicerie & Farines', ar: 'بقوليات ومؤونة', en: 'Pantry', icon: '🌾' },
             { id: 'epice', fr: 'Épices', ar: 'توابل', en: 'Spices', icon: '🌶️' },
             { id: 'laitage', fr: 'Crèmerie', ar: 'ألبان', en: 'Dairy', icon: '🧀' },
         ];
 
         const TEXTS = {
-            fr: { search: "Rechercher...", find: "Voir Recettes", missing: "Manquant", have: "Complet", add: "Ajouter manquants", empty_shop: "Liste vide", no_rec: "Aucune recette.", pwd: "Mot de passe:", del: "Supprimer?", save: "Sauver", edit: "Éditer", new: "Nouveau", admin: "Admin", back: "Retour" },
-            ar: { search: "بحث...", find: "الوصفات", missing: "ناقص", have: "كامل", add: "أضف النواقص", empty_shop: "القائمة فارغة", no_rec: "لا توجد وصفات", pwd: "كلمة السر:", del: "حذف؟", save: "حفظ", edit: "تعديل", new: "جديد", admin: "إدارة", back: "عودة" },
-            en: { search: "Search...", find: "See Recipes", missing: "Missing", have: "All set", add: "Add missing", empty_shop: "List empty", no_rec: "No recipes.", pwd: "Password:", del: "Delete?", save: "Save", edit: "Edit", new: "New", admin: "Admin", back: "Back" }
+            fr: { search: "Rechercher...", find: "Voir Recettes", missing: "Manquant", have: "Complet", add: "Ajouter les manquants", empty_shop: "Liste vide", no_rec: "Aucune recette compatible (>30%)", pwd: "Mot de passe Admin:", del: "Supprimer?", save: "Enregistrer", edit: "Éditer", new: "Nouveau", admin: "Admin", back: "Retour", top_match: "TOP MATCH", empty_pantry: "Votre frigo est vide. Ajoutez des ingrédients !" },
+            ar: { search: "بحث...", find: "الوصفات", missing: "ينقصك", have: "كامل", add: "أضف النواقص", empty_shop: "القائمة فارغة", no_rec: "لا توجد وصفات مناسبة (>30%)", pwd: "كلمة المرور:", del: "حذف؟", save: "حفظ", edit: "تعديل", new: "جديد", admin: "إدارة", back: "عودة", top_match: "توافق عالي", empty_pantry: "ثلاجتك فارغة. أضف مكونات!" },
+            en: { search: "Search...", find: "See Recipes", missing: "Missing", have: "All set", add: "Add missing", empty_shop: "List empty", no_rec: "No matching recipes (>30%)", pwd: "Admin Password:", del: "Delete?", save: "Save", edit: "Edit", new: "New", admin: "Admin", back: "Back", top_match: "TOP MATCH", empty_pantry: "Your fridge is empty. Add items!" }
         };
 
-        // --- MOTEUR DE L'APPLICATION (Vanilla JS) ---
+        // --- MOTEUR JS ---
         const app = {
             state: {
                 lang: 'fr',
@@ -110,11 +113,11 @@
                 recs: [],
                 search: '',
                 cat: 'legume',
-                recFilter: 'plat'
+                recFilter: 'plat',
+                tempRecIngs: [] // Pour la création de recette
             },
 
             init: function() {
-                // Chargement sécurisé
                 try {
                     this.state.pantry = JSON.parse(localStorage.getItem('fc_pantry')) || [];
                     this.state.shop = JSON.parse(localStorage.getItem('fc_shop')) || [];
@@ -122,18 +125,15 @@
                     this.state.ings = JSON.parse(localStorage.getItem('fc_ings')) || DEF_INGS;
                     this.state.recs = JSON.parse(localStorage.getItem('fc_recs')) || DEF_RECS;
                 } catch(e) { console.log('Reset data'); }
-                
                 this.render();
             },
 
             save: function() {
-                try {
-                    localStorage.setItem('fc_pantry', JSON.stringify(this.state.pantry));
-                    localStorage.setItem('fc_shop', JSON.stringify(this.state.shop));
-                    localStorage.setItem('fc_favs', JSON.stringify(this.state.favs));
-                    localStorage.setItem('fc_ings', JSON.stringify(this.state.ings));
-                    localStorage.setItem('fc_recs', JSON.stringify(this.state.recs));
-                } catch(e) {}
+                localStorage.setItem('fc_pantry', JSON.stringify(this.state.pantry));
+                localStorage.setItem('fc_shop', JSON.stringify(this.state.shop));
+                localStorage.setItem('fc_favs', JSON.stringify(this.state.favs));
+                localStorage.setItem('fc_ings', JSON.stringify(this.state.ings));
+                localStorage.setItem('fc_recs', JSON.stringify(this.state.recs));
                 this.render();
             },
 
@@ -147,12 +147,6 @@
                 const idx = this.state.pantry.indexOf(id);
                 if(idx > -1) this.state.pantry.splice(idx, 1);
                 else this.state.pantry.push(id);
-                this.save();
-            },
-
-            toggleShop: function(id) {
-                const idx = this.state.shop.indexOf(id);
-                if(idx > -1) this.state.shop.splice(idx, 1);
                 this.save();
             },
 
@@ -171,132 +165,134 @@
                 this.save();
             },
 
-            // --- RENDU VISUEL ---
+            // --- RENDU UI ---
             render: function() {
                 const t = TEXTS[this.state.lang];
                 const container = document.getElementById('app-container');
                 let html = '';
 
-                // Mise à jour de la navigation active
+                // Active Tab Style
                 ['pantry', 'recipes', 'shop'].forEach(t => {
                     const btn = document.getElementById('btn-'+t);
                     if(this.state.tab === t) btn.className = "flex flex-col items-center gap-1 p-2 rounded-xl text-emerald-400 bg-emerald-400/10 transition-all";
                     else btn.className = "flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400 transition-all";
                 });
                 
-                // Badge Shop
                 const badge = document.getElementById('shop-badge');
                 if(this.state.shop.length > 0) { badge.innerText = this.state.shop.length; badge.classList.remove('hidden'); } 
                 else { badge.classList.add('hidden'); }
 
-                // --- VUE : PANTRY ---
+                // --- VUE 1 : FRIGO ---
                 if (this.state.tab === 'pantry') {
-                    // Recherche
-                    html += `<div class="p-4 sticky top-[60px] z-20 bg-slate-950"><input oninput="app.setSearch(this.value)" value="${this.state.search}" placeholder="${t.search}" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>`;
+                    html += `<div class="p-4 sticky top-[68px] z-20 bg-slate-950"><input oninput="app.setSearch(this.value)" value="${this.state.search}" placeholder="${t.search}" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500 transition-colors"></div>`;
                     
-                    // Catégories
                     if(!this.state.search) {
                         html += `<div class="flex overflow-x-auto gap-2 px-4 pb-4 hide-scrollbar">`;
                         CATS.forEach(c => {
                             const active = this.state.cat === c.id ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800';
-                            html += `<button onclick="app.setCat('${c.id}')" class="px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold ${active}">${c.icon} ${c[this.state.lang]||c.fr}</button>`;
+                            html += `<button onclick="app.setCat('${c.id}')" class="px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold ${active} transition-all">${c.icon} ${c[this.state.lang]||c.fr}</button>`;
                         });
                         html += `</div>`;
                     }
 
-                    // Grille Ingrédients
-                    html += `<div class="grid grid-cols-4 sm:grid-cols-5 gap-3 p-4 pb-24">`;
+                    html += `<div class="grid grid-cols-4 sm:grid-cols-5 gap-3 p-4">`;
                     const filtered = this.state.ings.filter(i => this.state.search ? (i.fr+i.ar+i.en).toLowerCase().includes(this.state.search.toLowerCase()) : i.cat === this.state.cat);
                     
                     filtered.forEach(i => {
                         const sel = this.state.pantry.includes(i.id);
                         html += `
-                        <div onclick="app.togglePantry('${i.id}')" class="flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
-                            <div class="w-16 h-16 rounded-2xl border-2 ${sel ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'} overflow-hidden relative bg-slate-800">
+                        <div onclick="app.togglePantry('${i.id}')" class="flex flex-col items-center gap-2 cursor-pointer group active:scale-95 transition-transform">
+                            <div class="w-16 h-16 rounded-2xl border-2 ${sel ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'} overflow-hidden relative bg-slate-800 transition-all">
                                 <img src="${i.img}" class="w-full h-full object-cover">
-                                ${sel ? '<div class="absolute inset-0 bg-emerald-600/60 flex items-center justify-center text-white font-bold">✓</div>' : ''}
+                                ${sel ? '<div class="absolute inset-0 bg-emerald-600/60 flex items-center justify-center text-white font-bold animate-in">✓</div>' : ''}
                             </div>
-                            <span class="text-[10px] text-center font-bold ${sel ? 'text-emerald-400' : 'text-slate-500'} line-clamp-2">${i[this.state.lang]||i.fr}</span>
+                            <span class="text-[10px] text-center font-bold ${sel ? 'text-emerald-400' : 'text-slate-500'} line-clamp-2 leading-tight">${i[this.state.lang]||i.fr}</span>
                         </div>`;
                     });
                     html += `</div>`;
 
-                    // Bouton Action
-                    if(this.state.pantry.length > 0) {
-                        html += `<div class="fixed bottom-24 left-4 right-4 z-30"><button onclick="app.setTab('recipes')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2">${t.find} <span class="bg-white/20 px-2 rounded text-xs">${this.state.pantry.length}</span></button></div>`;
+                    if(this.state.pantry.length === 0) {
+                        html += `<div class="text-center p-10 text-slate-600 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🧊</div><p>${t.empty_pantry}</p></div>`
+                    } else {
+                        html += `<div class="fixed bottom-24 left-4 right-4 z-30"><button onclick="app.setTab('recipes')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2 hover:bg-emerald-500 transition-colors animate-in">${t.find} <span class="bg-white/20 px-2 rounded-full text-xs">${this.state.pantry.length}</span></button></div>`;
                     }
                 }
 
-                // --- VUE : RECETTES ---
+                // --- VUE 2 : RECETTES ---
                 else if (this.state.tab === 'recipes') {
-                    // Filtres
-                    html += `<div class="flex gap-2 p-4 overflow-x-auto hide-scrollbar sticky top-[60px] bg-slate-950 z-20">`;
+                    html += `<div class="flex gap-2 p-4 overflow-x-auto hide-scrollbar sticky top-[68px] bg-slate-950 z-20">`;
                     ['plat','dessert','boisson','fav'].forEach(f => {
-                        const active = this.state.recFilter === f ? 'bg-slate-800 text-emerald-400 border-emerald-500' : 'text-slate-500 border-transparent';
-                        html += `<button onclick="app.setRecFilter('${f}')" class="flex-1 py-2 px-4 rounded-lg bg-slate-900 border text-xs font-bold capitalize ${active}">${f}</button>`;
+                        const active = this.state.recFilter === f ? 'bg-slate-800 text-emerald-400 border-emerald-500' : 'text-slate-500 border-transparent hover:text-slate-300';
+                        html += `<button onclick="app.setRecFilter('${f}')" class="flex-1 py-2 px-4 rounded-lg bg-slate-900 border text-xs font-bold capitalize transition-all whitespace-nowrap ${active}">${f}</button>`;
                     });
                     html += `</div>`;
 
-                    // Liste
-                    html += `<div class="space-y-4 p-4 pb-24">`;
+                    html += `<div class="space-y-4 p-4">`;
                     let list = this.state.recs;
                     if(this.state.recFilter === 'fav') list = list.filter(r => this.state.favs.includes(r.id));
                     else list = list.filter(r => r.type === this.state.recFilter);
 
-                    // Matching Logic
+                    // ALGORITHME MATCHING & FILTRAGE 30%
                     const scored = list.map(r => {
                         const have = r.ingredients.filter(id => this.state.pantry.includes(id));
                         const missing = r.ingredients.filter(id => !this.state.pantry.includes(id));
                         const score = r.ingredients.length ? Math.round((have.length / r.ingredients.length) * 100) : 0;
                         return { ...r, score, missing };
-                    }).sort((a,b) => b.score - a.score);
+                    })
+                    .filter(r => r.score >= 30) // FILTRE 30%
+                    .sort((a,b) => b.score - a.score);
 
-                    if(scored.length === 0) html += `<div class="text-center py-10 text-slate-500">${t.no_rec}</div>`;
-
-                    scored.forEach(r => {
-                        const isFav = this.state.favs.includes(r.id);
-                        html += `
-                        <div onclick="app.openRec(${r.id})" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex gap-3 relative overflow-hidden group">
-                            <div class="w-24 h-24 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative">
-                                <img src="${r.img}" class="w-full h-full object-cover">
-                                <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 rounded">${r.score}%</div>
-                            </div>
-                            <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="text-white font-bold truncate pr-4">${r.title[this.state.lang]||r.title.fr}</h3>
-                                    <button onclick="app.toggleFav(${r.id}, event)" class="${isFav ? 'text-red-500' : 'text-slate-600'}">♥</button>
+                    if(scored.length === 0) {
+                        html += `<div class="text-center py-20 text-slate-500 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🤷‍♂️</div><p>${t.no_rec}</p></div>`;
+                    } else {
+                        scored.forEach(r => {
+                            const isFav = this.state.favs.includes(r.id);
+                            html += `
+                            <div onclick="app.openRec(${r.id})" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex gap-3 relative overflow-hidden group cursor-pointer hover:border-slate-700 transition-all">
+                                <div class="w-24 h-24 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative">
+                                    <img src="${r.img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                    <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 rounded ${r.score >= 70 ? 'bg-emerald-600' : ''}">${r.score}%</div>
                                 </div>
-                                ${r.score >= 70 ? `<div class="text-[10px] text-emerald-400 font-bold mb-1 pulse-badge w-fit px-1 rounded">🔥 ${t.high_match}</div>` : ''}
-                                <div class="text-xs text-slate-500 mb-2">${r.time} min • ${r.calories} kcal</div>
-                                <div class="flex gap-1 overflow-hidden h-5 items-center">
-                                    ${r.missing.length === 0 ? `<span class="text-[10px] text-emerald-400 bg-emerald-900/30 px-2 rounded">✓ ${t.have}</span>` : 
-                                    `<span class="text-[10px] text-red-400 mr-1">${t.missing}:</span>` + 
-                                    r.missing.slice(0,3).map(mid => `<span class="text-[10px] bg-slate-950 text-slate-400 px-1 rounded border border-slate-800">${this.getIngName(mid)}</span>`).join('')
-                                    }
+                                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="text-slate-200 font-bold truncate pr-4 text-lg">${r.title[this.state.lang]||r.title.fr}</h3>
+                                        <button onclick="app.toggleFav(${r.id}, event)" class="${isFav ? 'text-red-500' : 'text-slate-600 hover:text-red-400'}"><svg class="icon"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="${isFav?'currentColor':'none'}"/></svg></button>
+                                    </div>
+                                    
+                                    ${r.score >= 70 ? `<div class="text-[10px] text-emerald-400 font-bold mb-1 pulse-badge w-fit px-1.5 py-0.5 rounded bg-emerald-900/20 border border-emerald-900/50">🔥 ${t.top_match}</div>` : ''}
+                                    
+                                    <div class="text-xs text-slate-500 mb-2">${r.time} min • ${r.calories} kcal</div>
+                                    <div class="flex gap-1 overflow-hidden h-5 items-center">
+                                        ${r.missing.length === 0 ? `<span class="text-[10px] text-emerald-400 bg-emerald-900/20 px-2 rounded border border-emerald-900/50">✓ ${t.have}</span>` : 
+                                        `<span class="text-[10px] text-red-400 mr-1">${t.missing}:</span>` + 
+                                        r.missing.slice(0,2).map(mid => `<span class="text-[10px] bg-slate-950 text-slate-400 px-1 rounded border border-slate-800 truncate max-w-[50px]">${this.getIngName(mid)}</span>`).join('')
+                                        }
+                                        ${r.missing.length > 2 ? `<span class="text-[10px] text-slate-500">+${r.missing.length-2}</span>` : ''}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>`;
-                    });
+                            </div>`;
+                        });
+                    }
                     html += `</div>`;
                 }
 
-                // --- VUE : COURSES ---
+                // --- VUE 3 : COURSES ---
                 else if (this.state.tab === 'shop') {
                     html += `<div class="p-4">
-                        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold text-white">${t.empty_shop.split(' ')[0]}</h2>
+                        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center mb-6 shadow-lg">
+                            <div><h2 class="text-xl font-bold text-white">Liste</h2><p class="text-xs text-slate-500">${this.state.shop.length} items</p></div>
                             <div class="flex gap-2">
-                                <button onclick="app.shareShop()" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold">Partager</button>
-                                <button onclick="app.clearShop()" class="bg-red-600/20 text-red-400 px-3 py-1 rounded text-sm font-bold">Vider</button>
+                                <button onclick="app.shareShop()" class="bg-emerald-600/20 text-emerald-400 px-3 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600/30 transition">Partager</button>
+                                <button onclick="app.state.shop=[]; app.save()" class="bg-red-600/10 text-red-400 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-600/20 transition">Vider</button>
                             </div>
                         </div>
                         <div class="space-y-2">`;
                     
-                    if(this.state.shop.length === 0) html += `<div class="text-center py-10 text-slate-600">${t.empty_shop}</div>`;
+                    if(this.state.shop.length === 0) html += `<div class="text-center py-20 text-slate-600 border-2 border-dashed border-slate-800 rounded-3xl">${t.empty_shop}</div>`;
                     
                     this.state.shop.forEach(id => {
                         html += `
-                        <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 slide-up">
                             <div class="flex items-center gap-3">
                                 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                                 <span class="text-slate-300 font-medium">${this.getIngName(id)}</span>
@@ -310,7 +306,13 @@
                 container.innerHTML = html;
             },
 
-            // --- HELPERS ---
+            toggleShop: function(id) {
+                const idx = this.state.shop.indexOf(id);
+                if(idx > -1) this.state.shop.splice(idx, 1);
+                this.save();
+            },
+
+            // --- ADMIN & MODALS ---
             getIngName: function(id) {
                 const i = this.state.ings.find(x => x.id === id);
                 return i ? (i[this.state.lang] || i.fr) : id;
@@ -327,32 +329,32 @@
                     <div class="h-72 relative">
                         <img src="${r.img}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent"></div>
-                        <button onclick="app.closeModal()" class="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full backdrop-blur">←</button>
+                        <button onclick="app.closeModal()" class="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full backdrop-blur border border-white/10">←</button>
                         <div class="absolute bottom-4 left-4 right-4">
-                            <h2 class="text-3xl font-black text-white leading-tight mb-2">${r.title[this.state.lang]||r.title.fr}</h2>
+                            <h2 class="text-3xl font-black text-white leading-tight mb-2 drop-shadow-lg">${r.title[this.state.lang]||r.title.fr}</h2>
                             <div class="flex gap-2 text-sm text-slate-300">
-                                <span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.time} min</span>
-                                <span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.calories} kcal</span>
+                                <span class="bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 backdrop-blur">${r.time} min</span>
+                                <span class="bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 backdrop-blur">${r.calories} kcal</span>
                             </div>
                         </div>
                     </div>
-                    <div class="p-6">
-                        ${missing.length > 0 ? `<button onclick='app.addToShop(${JSON.stringify(missing)})' class="w-full bg-red-600/20 text-red-200 border border-red-600/50 py-3 rounded-xl font-bold mb-6">+ ${t.add} (${missing.length})</button>` : ''}
+                    <div class="p-6 max-w-lg mx-auto">
+                        ${missing.length > 0 ? `<button onclick='app.addToShop(${JSON.stringify(missing)})' class="w-full bg-red-600/20 text-red-200 border border-red-600/30 py-3 rounded-xl font-bold mb-8 hover:bg-red-600/30 transition">+ ${t.add} (${missing.length})</button>` : ''}
                         
-                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4">Ingrédients</h3>
+                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4 border-b border-slate-800 pb-2">Ingrédients</h3>
                         <div class="space-y-2 mb-8">
                             ${r.ingredients.map(id => {
                                 const has = this.state.pantry.includes(id);
-                                return `<div class="flex items-center gap-3 p-3 rounded-xl border ${has ? 'bg-emerald-950/30 border-emerald-500/30 text-white' : 'bg-slate-900 border-slate-800 text-slate-500'}">
-                                    <div class="w-5 h-5 rounded-full flex items-center justify-center ${has ? 'bg-emerald-500' : 'bg-slate-700'}">${has ? '✓' : ''}</div>
+                                return `<div class="flex items-center gap-3 p-3 rounded-xl border ${has ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-100' : 'bg-slate-900 border-slate-800 text-slate-500'}">
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center ${has ? 'bg-emerald-500 text-white' : 'bg-slate-700'}">${has ? '✓' : ''}</div>
                                     <span>${this.getIngName(id)}</span>
                                 </div>`
                             }).join('')}
                         </div>
 
-                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4">Instructions</h3>
+                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4 border-b border-slate-800 pb-2">Instructions</h3>
                         <div class="space-y-6 border-l-2 border-slate-800 pl-6 ml-2">
-                            ${(r.instructions[this.state.lang]||r.instructions.fr).map((s,i) => `<div class="relative text-slate-300"><span class="absolute -left-[35px] w-8 h-8 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full text-xs font-bold text-emerald-500">${i+1}</span>${s}</div>`).join('')}
+                            ${(r.instructions[this.state.lang]||r.instructions.fr).map((s,i) => `<div class="relative text-slate-300 leading-relaxed"><span class="absolute -left-[35px] w-8 h-8 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full text-xs font-bold text-emerald-500 shadow-sm">${i+1}</span>${s}</div>`).join('')}
                         </div>
                     </div>
                 </div>`;
@@ -364,6 +366,7 @@
 
             closeModal: function() {
                 document.getElementById('modal-container').classList.add('hidden');
+                this.state.tempRecIngs = []; // Reset temp logic
             },
 
             shareShop: function() {
@@ -372,34 +375,92 @@
                 alert("Copié !");
             },
 
-            clearShop: function() { this.state.shop = []; this.save(); },
-
+            // --- ADMIN ---
             openAdmin: function() {
                 const p = prompt(TEXTS[this.state.lang].pwd);
                 if(p === 'admin123') {
-                    let html = `<div class="bg-slate-950 min-h-screen p-4 text-white">
-                        <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                            <h2 class="text-xl font-bold text-emerald-500">Admin</h2>
-                            <button onclick="app.closeModal()">✕</button>
-                        </div>
-                        <div class="space-y-4">
-                            <h3 class="font-bold text-slate-400">Ajouter Ingrédient (Rapide)</h3>
-                            <form onsubmit="event.preventDefault(); app.addIng(this)" class="grid gap-2 bg-slate-900 p-4 rounded">
-                                <input name="fr" placeholder="Nom FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
-                                <input name="ar" placeholder="Nom AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
-                                <select name="cat" class="bg-slate-950 p-2 rounded border border-slate-700">${CATS.map(c=>`<option value="${c.id}">${c.fr}</option>`).join('')}</select>
-                                <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
-                                <button class="bg-emerald-600 py-2 rounded font-bold">Sauver</button>
-                            </form>
-                            <div class="text-xs text-slate-500 mt-4">Pour supprimer, allez dans le code source ou videz le cache.</div>
-                        </div>
-                    </div>`;
-                    const m = document.getElementById('modal-container');
-                    m.innerHTML = html;
-                    m.classList.remove('hidden');
+                    this.renderAdmin('ings');
                 } else if(p) alert('Erreur');
             },
 
+            renderAdmin: function(tab) {
+                const m = document.getElementById('modal-container');
+                m.classList.remove('hidden');
+                
+                // Header Admin
+                let html = `<div class="bg-slate-950 min-h-screen p-4 text-white">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                        <h2 class="text-xl font-bold text-emerald-500">Admin</h2>
+                        <button onclick="app.closeModal()">✕</button>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="app.renderAdmin('ings')" class="flex-1 py-2 rounded font-bold ${tab==='ings'?'bg-emerald-600':'bg-slate-800'}">Ingrédients</button>
+                        <button onclick="app.renderAdmin('recs')" class="flex-1 py-2 rounded font-bold ${tab==='recs'?'bg-emerald-600':'bg-slate-800'}">Recettes</button>
+                        <button onclick="app.renderAdmin('data')" class="flex-1 py-2 rounded font-bold ${tab==='data'?'bg-emerald-600':'bg-slate-800'}">Data</button>
+                    </div>`;
+
+                // --- ADMIN: INGRÉDIENTS ---
+                if (tab === 'ings') {
+                    html += `<form onsubmit="event.preventDefault(); app.addIng(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4">
+                        <input name="fr" placeholder="Nom FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
+                        <input name="ar" placeholder="Nom AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
+                        <select name="cat" class="bg-slate-950 p-2 rounded border border-slate-700">${CATS.map(c=>`<option value="${c.id}">${c.fr}</option>`).join('')}</select>
+                        <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
+                        <button class="bg-emerald-600 py-2 rounded font-bold">Ajouter Ingrédient</button>
+                    </form>
+                    <div class="space-y-2 pb-10">
+                        ${this.state.ings.map(i => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${i.img}" class="w-8 h-8 rounded bg-slate-800"><span>${i.fr}</span></div><button onclick="app.delIng('${i.id}')" class="text-red-400">🗑</button></div>`).join('')}
+                    </div>`;
+                }
+
+                // --- ADMIN: RECETTES (MANUEL) ---
+                else if (tab === 'recs') {
+                    html += `<form onsubmit="event.preventDefault(); app.addRec(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4 text-sm">
+                        <input name="fr" placeholder="Titre FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
+                        <input name="ar" placeholder="Titre AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input name="time" placeholder="Min" class="bg-slate-950 p-2 rounded border border-slate-700">
+                            <input name="cal" placeholder="Kcal" class="bg-slate-950 p-2 rounded border border-slate-700">
+                            <select name="type" class="bg-slate-950 p-2 rounded border border-slate-700"><option value="plat">Plat</option><option value="dessert">Dessert</option><option value="boisson">Boisson</option></select>
+                        </div>
+                        <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
+                        
+                        <div class="text-xs text-slate-400 mt-2">Ingrédients:</div>
+                        <div class="h-32 overflow-y-auto grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded border border-slate-700" id="admin-ing-list">
+                            ${this.state.ings.map(i => `<div onclick="app.toggleTempIng('${i.id}', this)" class="p-1 rounded cursor-pointer truncate bg-slate-800 text-slate-400 text-xs">${i.fr}</div>`).join('')}
+                        </div>
+
+                        <textarea name="inst_fr" placeholder="Instructions FR (séparer par .)" class="bg-slate-950 p-2 rounded border border-slate-700 mt-2 h-20"></textarea>
+                        <button class="bg-emerald-600 py-2 rounded font-bold mt-2">Ajouter Recette</button>
+                    </form>
+                    <div class="space-y-2 pb-10">
+                        ${this.state.recs.map(r => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${r.img}" class="w-8 h-8 rounded bg-slate-800"><span class="truncate max-w-[150px] text-xs">${r.title.fr}</span></div><button onclick="app.delRec(${r.id})" class="text-red-400">🗑</button></div>`).join('')}
+                    </div>`;
+                }
+
+                // --- ADMIN: DATA (IMPORT/EXPORT) ---
+                else if (tab === 'data') {
+                    html += `<div class="bg-slate-900 p-4 rounded border border-slate-800 space-y-4">
+                        <div>
+                            <h3 class="font-bold text-emerald-400 mb-2">Importer un fichier JSON</h3>
+                            <input type="file" onchange="app.handleFile(this)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700"/>
+                            <p class="text-xs text-slate-500 mt-2">Le fichier doit contenir { "ingredients": [], "recipes": [] }</p>
+                        </div>
+                        <hr class="border-slate-800">
+                        <div>
+                            <h3 class="font-bold text-blue-400 mb-2">Exporter les données</h3>
+                            <button onclick="app.exportData()" class="bg-blue-600 px-4 py-2 rounded text-sm font-bold w-full">Télécharger backup.json</button>
+                        </div>
+                        <hr class="border-slate-800">
+                        <button onclick="localStorage.clear(); location.reload()" class="bg-red-900/50 text-red-400 px-4 py-2 rounded text-sm font-bold w-full border border-red-900">Reset Total (Attention)</button>
+                    </div>`;
+                }
+
+                html += `</div>`;
+                m.innerHTML = html;
+            },
+
+            // --- ADMIN LOGIC ---
             addIng: function(form) {
                 const newIng = {
                     id: Date.now().toString(),
@@ -408,8 +469,57 @@
                 };
                 this.state.ings.push(newIng);
                 this.save();
-                this.closeModal();
-                alert('Ajouté !');
+                this.renderAdmin('ings');
+            },
+            delIng: function(id) { if(confirm('Supprimer?')) { this.state.ings = this.state.ings.filter(x=>x.id!==id); this.save(); this.renderAdmin('ings'); } },
+
+            toggleTempIng: function(id, el) {
+                const idx = this.state.tempRecIngs.indexOf(id);
+                if(idx > -1) { this.state.tempRecIngs.splice(idx, 1); el.classList.remove('bg-emerald-600', 'text-white'); el.classList.add('bg-slate-800', 'text-slate-400'); }
+                else { this.state.tempRecIngs.push(id); el.classList.remove('bg-slate-800', 'text-slate-400'); el.classList.add('bg-emerald-600', 'text-white'); }
+            },
+
+            addRec: function(form) {
+                const newRec = {
+                    id: Date.now(),
+                    type: form.type.value,
+                    title: { fr: form.fr.value, ar: form.ar.value, en: form.fr.value },
+                    img: form.img.value || 'https://via.placeholder.com/150',
+                    time: form.time.value || '30', calories: form.cal.value || '500',
+                    ingredients: [...this.state.tempRecIngs],
+                    instructions: { fr: form.inst_fr.value.split('.'), ar: [], en: [] }
+                };
+                this.state.recs.push(newRec);
+                this.state.tempRecIngs = [];
+                this.save();
+                this.renderAdmin('recs');
+            },
+            delRec: function(id) { if(confirm('Supprimer?')) { this.state.recs = this.state.recs.filter(x=>x.id!==id); this.save(); this.renderAdmin('recs'); } },
+
+            handleFile: function(input) {
+                const file = input.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if(data.ingredients) this.state.ings = [...this.state.ings, ...data.ingredients];
+                        if(data.recipes) this.state.recs = [...this.state.recs, ...data.recipes];
+                        this.save();
+                        alert('Import réussi !');
+                        this.renderAdmin('data');
+                    } catch(err) { alert('Fichier invalide'); }
+                };
+                reader.readAsText(file);
+            },
+
+            exportData: function() {
+                const data = { ingredients: this.state.ings, recipes: this.state.recs };
+                const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = "frigochef_backup.json";
+                a.click();
             }
         };
 
