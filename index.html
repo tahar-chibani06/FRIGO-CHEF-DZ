@@ -4,143 +4,417 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Frigo-Chef DZ</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { slate: { 950: '#020617' } },
-                    fontFamily: { sans: ['Inter', 'sans-serif'], arabic: ['Cairo', 'sans-serif'] }
-                }
-            }
+            theme: { extend: { colors: { slate: { 950: '#020617' } }, fontFamily: { sans: ['Inter', 'sans-serif'], arabic: ['Cairo', 'sans-serif'] } } }
         }
     </script>
-    
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
-        body { background-color: #020617; color: #e2e8f0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
         .pulse-badge { animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        /* Icônes SVG */
+        .icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: middle; }
     </style>
 </head>
-<body>
-    <div id="loader" class="flex h-screen flex-col items-center justify-center text-white bg-slate-950 font-sans p-4 text-center">
-        <h1 class="text-2xl font-bold mb-2 text-emerald-500">Frigo-Chef DZ</h1>
-        <p class="text-slate-400 animate-pulse">Chargement des modules...</p>
-        <div id="error-msg" class="hidden mt-4 text-red-400 text-sm border border-red-900 p-2 rounded bg-red-950/30"></div>
+<body class="pb-20">
+
+    <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur border-b border-slate-800 p-4 flex justify-between items-center">
+        <h1 class="text-xl font-black flex items-center gap-2 text-white">
+            <span class="bg-emerald-600 p-1 rounded">👨‍🍳</span> <span id="app-title">Frigo-Chef DZ</span>
+        </h1>
+        <div class="flex gap-2 items-center">
+            <select id="lang-select" onchange="app.setLang(this.value)" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded px-2 py-1 uppercase">
+                <option value="fr">FR</option><option value="ar">AR</option><option value="en">EN</option>
+            </select>
+            <button onclick="app.openAdmin()" class="text-slate-500 hover:text-white">⚙️</button>
+        </div>
     </div>
-    
-    <div id="root"></div>
+
+    <div id="app-container" class="animate-in"></div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur border-t border-slate-900 flex justify-around p-2 pb-6 z-40 max-w-md mx-auto">
+        <button onclick="app.setTab('pantry')" id="btn-pantry" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
+            <svg class="icon"><path d="M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><line x1="5" y1="10" x2="19" y2="10"/><path d="M15 2v20"/></svg>
+        </button>
+        <button onclick="app.setTab('recipes')" id="btn-recipes" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
+            <svg class="icon"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+        </button>
+        <button onclick="app.setTab('shop')" id="btn-shop" class="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400">
+            <div class="relative">
+                <svg class="icon"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span id="shop-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </div>
+        </button>
+    </div>
+
+    <div id="modal-container" class="hidden fixed inset-0 bg-slate-950 z-50 overflow-y-auto"></div>
 
     <script>
-        // Vérification pré-lancement pour afficher une erreur claire si internet coupe
-        window.onload = function() {
-            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
-                const err = document.getElementById('error-msg');
-                err.classList.remove('hidden');
-                err.innerHTML = "⚠️ Erreur : Impossible de charger React.<br>Vérifiez votre connexion internet.";
-            } else {
-                // Tout est OK, on cache le loader quand React prend le relais
-            }
-        }
-    </script>
-
-    <script type="text/babel">
-        // --- 0. SÉCURITÉ & UTILS ---
-        const { useState, useMemo, useEffect } = React;
-
-        // Fonction sécurisée pour LIRE le LocalStorage
-        const safeLoad = (key, fallback) => {
-            try {
-                const item = localStorage.getItem(key);
-                if (!item || item === "undefined") return fallback;
-                return JSON.parse(item);
-            } catch (error) {
-                console.warn("Erreur lecture stockage:", error);
-                return fallback;
-            }
-        };
-
-        // Fonction sécurisée pour ÉCRIRE dans le LocalStorage (évite le crash "Script Error")
-        const safeSave = (key, value) => {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-            } catch (error) {
-                console.warn("Erreur sauvegarde (mémoire pleine ou navigation privée):", error);
-            }
-        };
-
-        // --- 1. DONNÉES INITIALES ---
-        const INITIAL_INGREDIENTS = [
+        // --- DONNÉES PAR DÉFAUT ---
+        const DEF_INGS = [
             { id: '1', cat: 'legume', fr: 'Tomate', ar: 'طماطم', en: 'Tomato', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200' },
             { id: '2', cat: 'legume', fr: 'Oignon', ar: 'بصل', en: 'Onion', img: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa829?w=200' },
             { id: '3', cat: 'legume', fr: 'Pomme de terre', ar: 'بطاطا', en: 'Potato', img: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=200' },
-            { id: '11', cat: 'legume', fr: 'Ail', ar: 'ثوم', en: 'Garlic', img: 'https://images.unsplash.com/photo-1615477210537-f81d9f8e5225?w=200' },
             { id: '4', cat: 'viande', fr: 'Poulet', ar: 'دجاج', en: 'Chicken', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200' },
             { id: '5', cat: 'viande', fr: 'Viande Rouge', ar: 'لحم', en: 'Meat', img: 'https://images.unsplash.com/photo-1603048297172-c92544798d5e?w=200' },
             { id: '6', cat: 'epicerie', fr: 'Farine', ar: 'فرينة', en: 'Flour', img: 'https://images.unsplash.com/photo-1586585571612-47d095e1925e?w=200' },
             { id: '7', cat: 'epicerie', fr: 'Couscous', ar: 'كسكس', en: 'Couscous', img: 'https://images.unsplash.com/photo-1586548688220-3162b70f074a?w=200' },
-            { id: '13', cat: 'epicerie', fr: 'Pois chiche', ar: 'حمص', en: 'Chickpeas', img: 'https://images.unsplash.com/photo-1584661848529-6799042c16f0?w=200' },
             { id: '8', cat: 'epice', fr: 'Sel', ar: 'ملح', en: 'Salt', img: 'https://images.unsplash.com/photo-1626131776934-22b62071869e?w=200' },
-            { id: '14', cat: 'epice', fr: 'Poivre', ar: 'فلفل أسود', en: 'Pepper', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200' },
             { id: '9', cat: 'laitage', fr: 'Lait', ar: 'حليب', en: 'Milk', img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200' },
             { id: '10', cat: 'laitage', fr: 'Oeufs', ar: 'بيض', en: 'Eggs', img: 'https://images.unsplash.com/photo-1491524062933-cb0289261700?w=200' }
         ];
 
-        const INITIAL_RECIPES = [
+        const DEF_RECS = [
             {
-                id: 1, type: 'plat', title: { fr: "Couscous Royal", ar: "كسكس ملكي", en: "Royal Couscous" },
+                id: 1, type: 'plat', title: { fr: "Couscous", ar: "كسكس", en: "Couscous" },
                 img: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=800", time: "120", calories: "750",
-                ingredients: ["1", "3", "4", "7", "11", "13"],
-                instructions: { fr: ["Cuire la viande.", "Ajouter les légumes.", "Vapeur le couscous."], ar: ["طيبي اللحم.", "زيدي الخضرة.", "فوري الكسكس."], en: ["Cook meat.", "Add veggies.", "Steam couscous."] }
+                ingredients: ["1", "3", "4", "7"],
+                instructions: { fr: ["Cuire viande.", "Vapeur couscous."], ar: ["طيبي اللحم.", "فوري الكسكس."], en: ["Cook meat.", "Steam couscous."] }
             },
             {
                 id: 2, type: 'plat', title: { fr: "Frites Omelette", ar: "فريت أومليت", en: "Fries Omelet" },
                 img: "https://images.unsplash.com/photo-1593584785033-9c7604d0863f?w=800", time: "20", calories: "400",
-                ingredients: ["3", "10", "8", "14"],
-                instructions: { fr: ["Frire les pommes de terre.", "Battre les oeufs.", "Mélanger."], ar: ["قلي البطاطا.", "خلطي البيض.", "خلطي كلش."], en: ["Fry potatoes.", "Beat eggs.", "Mix."] }
+                ingredients: ["3", "10", "8"],
+                instructions: { fr: ["Frire patates.", "Battre oeufs."], ar: ["قلي البطاطا.", "خلطي البيض."], en: ["Fry potatoes.", "Beat eggs."] }
             }
         ];
 
-        // --- 2. COMPOSANTS ICONES ---
-        const Icon = ({ children, className, onClick }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} onClick={onClick}>{children}</svg>
-        );
-        
-        const Icons = {
-            Search: (p) => <Icon {...p}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></Icon>,
-            ChefHat: (p) => <Icon {...p}><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path><line x1="6" y1="17" x2="18" y2="17"></line></Icon>,
-            Heart: (p) => <Icon {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></Icon>,
-            ArrowLeft: (p) => <Icon {...p}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></Icon>,
-            Plus: (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></Icon>,
-            X: (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></Icon>,
-            Check: (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"></polyline></Icon>,
-            Flame: (p) => <Icon {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></Icon>,
-            Settings: (p) => <Icon {...p}><path d="M12.22 2h-.44a2 2 0 0 1-2-2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73v.18a2 2 0 0 0 2 0v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V2.18a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></Icon>,
-            Trash: (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></Icon>,
-            Edit: (p) => <Icon {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></Icon>,
-            Share: (p) => <Icon {...p}><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></Icon>,
-            Fridge: (p) => <Icon {...p}><path d="M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><line x1="5" y1="10" x2="19" y2="10"/><path d="M15 2v20"/></Icon>,
-            Utensils: (p) => <Icon {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></Icon>,
-            List: (p) => <Icon {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></Icon>,
-            Globe: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></Icon>,
-            Alert: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></Icon>
+        const CATS = [
+            { id: 'legume', fr: 'Légumes', ar: 'خضار', en: 'Veg', icon: '🥕' },
+            { id: 'viande', fr: 'Viandes', ar: 'لحوم', en: 'Meat', icon: '🥩' },
+            { id: 'epicerie', fr: 'Épicerie', ar: 'مؤونة', en: 'Pantry', icon: '🌾' },
+            { id: 'epice', fr: 'Épices', ar: 'توابل', en: 'Spices', icon: '🌶️' },
+            { id: 'laitage', fr: 'Crèmerie', ar: 'ألبان', en: 'Dairy', icon: '🧀' },
+        ];
+
+        const TEXTS = {
+            fr: { search: "Rechercher...", find: "Voir Recettes", missing: "Manquant", have: "Complet", add: "Ajouter manquants", empty_shop: "Liste vide", no_rec: "Aucune recette.", pwd: "Mot de passe:", del: "Supprimer?", save: "Sauver", edit: "Éditer", new: "Nouveau", admin: "Admin", back: "Retour" },
+            ar: { search: "بحث...", find: "الوصفات", missing: "ناقص", have: "كامل", add: "أضف النواقص", empty_shop: "القائمة فارغة", no_rec: "لا توجد وصفات", pwd: "كلمة السر:", del: "حذف؟", save: "حفظ", edit: "تعديل", new: "جديد", admin: "إدارة", back: "عودة" },
+            en: { search: "Search...", find: "See Recipes", missing: "Missing", have: "All set", add: "Add missing", empty_shop: "List empty", no_rec: "No recipes.", pwd: "Password:", del: "Delete?", save: "Save", edit: "Edit", new: "New", admin: "Admin", back: "Back" }
         };
 
-        const CATEGORIES = [
-            { id: 'legume', fr: 'Légumes & Fruits', ar: 'خضروات وفواكه', en: 'Veg & Fruits', icon: '🥕' },
-            { id: 'viande', fr: 'Viandes & Poissons', ar: 'لحوم وأسماك', en: 'Meats & Fish', icon: '🥩' },
-            { id: 'epicerie', fr: 'Épicerie & Farines', ar: 'بقوليات ومؤونة', en: 'Pantry & Flour', icon: '🌾' },
-            { id: 'epice', fr: 'Épices', ar: 'توابل', en: 'Spices', icon: '🌶️' },
-            { id: 'laitage', fr
+        // --- MOTEUR DE L'APPLICATION (Vanilla JS) ---
+        const app = {
+            state: {
+                lang: 'fr',
+                tab: 'pantry',
+                pantry: [],
+                shop: [],
+                favs: [],
+                ings: [],
+                recs: [],
+                search: '',
+                cat: 'legume',
+                recFilter: 'plat'
+            },
+
+            init: function() {
+                // Chargement sécurisé
+                try {
+                    this.state.pantry = JSON.parse(localStorage.getItem('fc_pantry')) || [];
+                    this.state.shop = JSON.parse(localStorage.getItem('fc_shop')) || [];
+                    this.state.favs = JSON.parse(localStorage.getItem('fc_favs')) || [];
+                    this.state.ings = JSON.parse(localStorage.getItem('fc_ings')) || DEF_INGS;
+                    this.state.recs = JSON.parse(localStorage.getItem('fc_recs')) || DEF_RECS;
+                } catch(e) { console.log('Reset data'); }
+                
+                this.render();
+            },
+
+            save: function() {
+                try {
+                    localStorage.setItem('fc_pantry', JSON.stringify(this.state.pantry));
+                    localStorage.setItem('fc_shop', JSON.stringify(this.state.shop));
+                    localStorage.setItem('fc_favs', JSON.stringify(this.state.favs));
+                    localStorage.setItem('fc_ings', JSON.stringify(this.state.ings));
+                    localStorage.setItem('fc_recs', JSON.stringify(this.state.recs));
+                } catch(e) {}
+                this.render();
+            },
+
+            setTab: function(tab) { this.state.tab = tab; this.render(); },
+            setLang: function(lang) { this.state.lang = lang; document.body.dir = lang === 'ar' ? 'rtl' : 'ltr'; this.render(); },
+            setCat: function(cat) { this.state.cat = cat; this.render(); },
+            setSearch: function(val) { this.state.search = val; this.render(); },
+            setRecFilter: function(f) { this.state.recFilter = f; this.render(); },
+
+            togglePantry: function(id) {
+                const idx = this.state.pantry.indexOf(id);
+                if(idx > -1) this.state.pantry.splice(idx, 1);
+                else this.state.pantry.push(id);
+                this.save();
+            },
+
+            toggleShop: function(id) {
+                const idx = this.state.shop.indexOf(id);
+                if(idx > -1) this.state.shop.splice(idx, 1);
+                this.save();
+            },
+
+            addToShop: function(ids) {
+                ids.forEach(id => { if(!this.state.shop.includes(id)) this.state.shop.push(id); });
+                this.state.tab = 'shop';
+                this.closeModal();
+                this.save();
+            },
+
+            toggleFav: function(id, e) {
+                if(e) e.stopPropagation();
+                const idx = this.state.favs.indexOf(id);
+                if(idx > -1) this.state.favs.splice(idx, 1);
+                else this.state.favs.push(id);
+                this.save();
+            },
+
+            // --- RENDU VISUEL ---
+            render: function() {
+                const t = TEXTS[this.state.lang];
+                const container = document.getElementById('app-container');
+                let html = '';
+
+                // Mise à jour de la navigation active
+                ['pantry', 'recipes', 'shop'].forEach(t => {
+                    const btn = document.getElementById('btn-'+t);
+                    if(this.state.tab === t) btn.className = "flex flex-col items-center gap-1 p-2 rounded-xl text-emerald-400 bg-emerald-400/10 transition-all";
+                    else btn.className = "flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 hover:text-emerald-400 transition-all";
+                });
+                
+                // Badge Shop
+                const badge = document.getElementById('shop-badge');
+                if(this.state.shop.length > 0) { badge.innerText = this.state.shop.length; badge.classList.remove('hidden'); } 
+                else { badge.classList.add('hidden'); }
+
+                // --- VUE : PANTRY ---
+                if (this.state.tab === 'pantry') {
+                    // Recherche
+                    html += `<div class="p-4 sticky top-[60px] z-20 bg-slate-950"><input oninput="app.setSearch(this.value)" value="${this.state.search}" placeholder="${t.search}" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>`;
+                    
+                    // Catégories
+                    if(!this.state.search) {
+                        html += `<div class="flex overflow-x-auto gap-2 px-4 pb-4 hide-scrollbar">`;
+                        CATS.forEach(c => {
+                            const active = this.state.cat === c.id ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800';
+                            html += `<button onclick="app.setCat('${c.id}')" class="px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold ${active}">${c.icon} ${c[this.state.lang]||c.fr}</button>`;
+                        });
+                        html += `</div>`;
+                    }
+
+                    // Grille Ingrédients
+                    html += `<div class="grid grid-cols-4 sm:grid-cols-5 gap-3 p-4 pb-24">`;
+                    const filtered = this.state.ings.filter(i => this.state.search ? (i.fr+i.ar+i.en).toLowerCase().includes(this.state.search.toLowerCase()) : i.cat === this.state.cat);
+                    
+                    filtered.forEach(i => {
+                        const sel = this.state.pantry.includes(i.id);
+                        html += `
+                        <div onclick="app.togglePantry('${i.id}')" class="flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
+                            <div class="w-16 h-16 rounded-2xl border-2 ${sel ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'} overflow-hidden relative bg-slate-800">
+                                <img src="${i.img}" class="w-full h-full object-cover">
+                                ${sel ? '<div class="absolute inset-0 bg-emerald-600/60 flex items-center justify-center text-white font-bold">✓</div>' : ''}
+                            </div>
+                            <span class="text-[10px] text-center font-bold ${sel ? 'text-emerald-400' : 'text-slate-500'} line-clamp-2">${i[this.state.lang]||i.fr}</span>
+                        </div>`;
+                    });
+                    html += `</div>`;
+
+                    // Bouton Action
+                    if(this.state.pantry.length > 0) {
+                        html += `<div class="fixed bottom-24 left-4 right-4 z-30"><button onclick="app.setTab('recipes')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2">${t.find} <span class="bg-white/20 px-2 rounded text-xs">${this.state.pantry.length}</span></button></div>`;
+                    }
+                }
+
+                // --- VUE : RECETTES ---
+                else if (this.state.tab === 'recipes') {
+                    // Filtres
+                    html += `<div class="flex gap-2 p-4 overflow-x-auto hide-scrollbar sticky top-[60px] bg-slate-950 z-20">`;
+                    ['plat','dessert','boisson','fav'].forEach(f => {
+                        const active = this.state.recFilter === f ? 'bg-slate-800 text-emerald-400 border-emerald-500' : 'text-slate-500 border-transparent';
+                        html += `<button onclick="app.setRecFilter('${f}')" class="flex-1 py-2 px-4 rounded-lg bg-slate-900 border text-xs font-bold capitalize ${active}">${f}</button>`;
+                    });
+                    html += `</div>`;
+
+                    // Liste
+                    html += `<div class="space-y-4 p-4 pb-24">`;
+                    let list = this.state.recs;
+                    if(this.state.recFilter === 'fav') list = list.filter(r => this.state.favs.includes(r.id));
+                    else list = list.filter(r => r.type === this.state.recFilter);
+
+                    // Matching Logic
+                    const scored = list.map(r => {
+                        const have = r.ingredients.filter(id => this.state.pantry.includes(id));
+                        const missing = r.ingredients.filter(id => !this.state.pantry.includes(id));
+                        const score = r.ingredients.length ? Math.round((have.length / r.ingredients.length) * 100) : 0;
+                        return { ...r, score, missing };
+                    }).sort((a,b) => b.score - a.score);
+
+                    if(scored.length === 0) html += `<div class="text-center py-10 text-slate-500">${t.no_rec}</div>`;
+
+                    scored.forEach(r => {
+                        const isFav = this.state.favs.includes(r.id);
+                        html += `
+                        <div onclick="app.openRec(${r.id})" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex gap-3 relative overflow-hidden group">
+                            <div class="w-24 h-24 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative">
+                                <img src="${r.img}" class="w-full h-full object-cover">
+                                <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 rounded">${r.score}%</div>
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-white font-bold truncate pr-4">${r.title[this.state.lang]||r.title.fr}</h3>
+                                    <button onclick="app.toggleFav(${r.id}, event)" class="${isFav ? 'text-red-500' : 'text-slate-600'}">♥</button>
+                                </div>
+                                ${r.score >= 70 ? `<div class="text-[10px] text-emerald-400 font-bold mb-1 pulse-badge w-fit px-1 rounded">🔥 ${t.high_match}</div>` : ''}
+                                <div class="text-xs text-slate-500 mb-2">${r.time} min • ${r.calories} kcal</div>
+                                <div class="flex gap-1 overflow-hidden h-5 items-center">
+                                    ${r.missing.length === 0 ? `<span class="text-[10px] text-emerald-400 bg-emerald-900/30 px-2 rounded">✓ ${t.have}</span>` : 
+                                    `<span class="text-[10px] text-red-400 mr-1">${t.missing}:</span>` + 
+                                    r.missing.slice(0,3).map(mid => `<span class="text-[10px] bg-slate-950 text-slate-400 px-1 rounded border border-slate-800">${this.getIngName(mid)}</span>`).join('')
+                                    }
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                // --- VUE : COURSES ---
+                else if (this.state.tab === 'shop') {
+                    html += `<div class="p-4">
+                        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-white">${t.empty_shop.split(' ')[0]}</h2>
+                            <div class="flex gap-2">
+                                <button onclick="app.shareShop()" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold">Partager</button>
+                                <button onclick="app.clearShop()" class="bg-red-600/20 text-red-400 px-3 py-1 rounded text-sm font-bold">Vider</button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">`;
+                    
+                    if(this.state.shop.length === 0) html += `<div class="text-center py-10 text-slate-600">${t.empty_shop}</div>`;
+                    
+                    this.state.shop.forEach(id => {
+                        html += `
+                        <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <span class="text-slate-300 font-medium">${this.getIngName(id)}</span>
+                            </div>
+                            <button onclick="app.toggleShop('${id}')" class="text-slate-500 hover:text-red-400">✕</button>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                }
+
+                container.innerHTML = html;
+            },
+
+            // --- HELPERS ---
+            getIngName: function(id) {
+                const i = this.state.ings.find(x => x.id === id);
+                return i ? (i[this.state.lang] || i.fr) : id;
+            },
+
+            openRec: function(id) {
+                const r = this.state.recs.find(x => x.id === id);
+                if(!r) return;
+                const t = TEXTS[this.state.lang];
+                const missing = r.ingredients.filter(id => !this.state.pantry.includes(id));
+                
+                let modalHtml = `
+                <div class="relative min-h-screen bg-slate-950 pb-10">
+                    <div class="h-72 relative">
+                        <img src="${r.img}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent"></div>
+                        <button onclick="app.closeModal()" class="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full backdrop-blur">←</button>
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <h2 class="text-3xl font-black text-white leading-tight mb-2">${r.title[this.state.lang]||r.title.fr}</h2>
+                            <div class="flex gap-2 text-sm text-slate-300">
+                                <span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.time} min</span>
+                                <span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.calories} kcal</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        ${missing.length > 0 ? `<button onclick='app.addToShop(${JSON.stringify(missing)})' class="w-full bg-red-600/20 text-red-200 border border-red-600/50 py-3 rounded-xl font-bold mb-6">+ ${t.add} (${missing.length})</button>` : ''}
+                        
+                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4">Ingrédients</h3>
+                        <div class="space-y-2 mb-8">
+                            ${r.ingredients.map(id => {
+                                const has = this.state.pantry.includes(id);
+                                return `<div class="flex items-center gap-3 p-3 rounded-xl border ${has ? 'bg-emerald-950/30 border-emerald-500/30 text-white' : 'bg-slate-900 border-slate-800 text-slate-500'}">
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center ${has ? 'bg-emerald-500' : 'bg-slate-700'}">${has ? '✓' : ''}</div>
+                                    <span>${this.getIngName(id)}</span>
+                                </div>`
+                            }).join('')}
+                        </div>
+
+                        <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4">Instructions</h3>
+                        <div class="space-y-6 border-l-2 border-slate-800 pl-6 ml-2">
+                            ${(r.instructions[this.state.lang]||r.instructions.fr).map((s,i) => `<div class="relative text-slate-300"><span class="absolute -left-[35px] w-8 h-8 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full text-xs font-bold text-emerald-500">${i+1}</span>${s}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+                
+                const m = document.getElementById('modal-container');
+                m.innerHTML = modalHtml;
+                m.classList.remove('hidden');
+            },
+
+            closeModal: function() {
+                document.getElementById('modal-container').classList.add('hidden');
+            },
+
+            shareShop: function() {
+                const txt = "🛒 Liste:\n" + this.state.shop.map(id => "- " + this.getIngName(id)).join('\n');
+                navigator.clipboard.writeText(txt);
+                alert("Copié !");
+            },
+
+            clearShop: function() { this.state.shop = []; this.save(); },
+
+            openAdmin: function() {
+                const p = prompt(TEXTS[this.state.lang].pwd);
+                if(p === 'admin123') {
+                    let html = `<div class="bg-slate-950 min-h-screen p-4 text-white">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                            <h2 class="text-xl font-bold text-emerald-500">Admin</h2>
+                            <button onclick="app.closeModal()">✕</button>
+                        </div>
+                        <div class="space-y-4">
+                            <h3 class="font-bold text-slate-400">Ajouter Ingrédient (Rapide)</h3>
+                            <form onsubmit="event.preventDefault(); app.addIng(this)" class="grid gap-2 bg-slate-900 p-4 rounded">
+                                <input name="fr" placeholder="Nom FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
+                                <input name="ar" placeholder="Nom AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
+                                <select name="cat" class="bg-slate-950 p-2 rounded border border-slate-700">${CATS.map(c=>`<option value="${c.id}">${c.fr}</option>`).join('')}</select>
+                                <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
+                                <button class="bg-emerald-600 py-2 rounded font-bold">Sauver</button>
+                            </form>
+                            <div class="text-xs text-slate-500 mt-4">Pour supprimer, allez dans le code source ou videz le cache.</div>
+                        </div>
+                    </div>`;
+                    const m = document.getElementById('modal-container');
+                    m.innerHTML = html;
+                    m.classList.remove('hidden');
+                } else if(p) alert('Erreur');
+            },
+
+            addIng: function(form) {
+                const newIng = {
+                    id: Date.now().toString(),
+                    fr: form.fr.value, ar: form.ar.value, en: form.fr.value,
+                    cat: form.cat.value, img: form.img.value || 'https://via.placeholder.com/150'
+                };
+                this.state.ings.push(newIng);
+                this.save();
+                this.closeModal();
+                alert('Ajouté !');
+            }
+        };
+
+        // Lancement
+        app.init();
+    </script>
+</body>
+</html>
