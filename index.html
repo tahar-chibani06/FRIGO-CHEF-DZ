@@ -9,16 +9,26 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { colors: { slate: { 950: '#020617' } }, fontFamily: { sans: ['Inter', 'sans-serif'], arabic: ['Cairo', 'sans-serif'] } } }
+            theme: { extend: { colors: { slate: { 950: '#020617' }, emerald: { 600: '#059669', 500: '#10b981' } }, fontFamily: { sans: ['Inter', 'sans-serif'], arabic: ['Cairo', 'sans-serif'] } } }
         }
     </script>
     <style>
         body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        /* Animation Badge Top Match */
         .pulse-badge { animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
         .icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: middle; }
+        
+        /* Style des Catégories Amélioré */
+        .cat-card {
+            min-width: 100px; height: 60px; border-radius: 12px; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            border: 1px solid #1e293b; transition: all 0.2s;
+        }
+        .cat-card.active { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .cat-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.4; transition: opacity 0.2s; }
+        .cat-card.active .cat-bg { opacity: 0.2; }
+        .cat-content { position: relative; z-index: 10; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 0.8rem; text-align: center; }
     </style>
 </head>
 <body class="pb-24">
@@ -58,73 +68,120 @@
     <div id="modal-container" class="hidden fixed inset-0 bg-slate-950 z-50 overflow-y-auto animate-in"></div>
 
     <script>
-        // --- DONNÉES PAR DÉFAUT ---
-        const DEF_INGS = [
-            { id: '1', cat: 'legume', fr: 'Tomate', ar: 'طماطم', en: 'Tomato', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200' },
-            { id: '2', cat: 'legume', fr: 'Oignon', ar: 'بصل', en: 'Onion', img: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa829?w=200' },
-            { id: '3', cat: 'legume', fr: 'Pomme de terre', ar: 'بطاطا', en: 'Potato', img: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=200' },
-            { id: '4', cat: 'viande', fr: 'Poulet', ar: 'دجاج', en: 'Chicken', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200' },
-            { id: '5', cat: 'viande', fr: 'Viande Rouge', ar: 'لحم', en: 'Meat', img: 'https://images.unsplash.com/photo-1603048297172-c92544798d5e?w=200' },
-            { id: '6', cat: 'epicerie', fr: 'Farine', ar: 'فرينة', en: 'Flour', img: 'https://images.unsplash.com/photo-1586585571612-47d095e1925e?w=200' },
-            { id: '7', cat: 'epicerie', fr: 'Couscous', ar: 'كسكس', en: 'Couscous', img: 'https://images.unsplash.com/photo-1586548688220-3162b70f074a?w=200' },
-            { id: '8', cat: 'epice', fr: 'Sel', ar: 'ملح', en: 'Salt', img: 'https://images.unsplash.com/photo-1626131776934-22b62071869e?w=200' },
-            { id: '9', cat: 'laitage', fr: 'Lait', ar: 'حليب', en: 'Milk', img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200' },
-            { id: '10', cat: 'laitage', fr: 'Oeufs', ar: 'بيض', en: 'Eggs', img: 'https://images.unsplash.com/photo-1491524062933-cb0289261700?w=200' }
-        ];
-
-        const DEF_RECS = [
-            {
-                id: 1, type: 'plat', title: { fr: "Couscous", ar: "كسكس", en: "Couscous" },
-                img: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=800", time: "120", calories: "750",
-                ingredients: ["1", "3", "4", "7"],
-                instructions: { fr: ["Cuire viande.", "Vapeur couscous."], ar: ["طيبي اللحم.", "فوري الكسكس."], en: ["Cook meat.", "Steam couscous."] }
-            },
-            {
-                id: 2, type: 'plat', title: { fr: "Frites Omelette", ar: "فريت أومليت", en: "Fries Omelet" },
-                img: "https://images.unsplash.com/photo-1593584785033-9c7604d0863f?w=800", time: "20", calories: "400",
-                ingredients: ["3", "10", "8"],
-                instructions: { fr: ["Frire patates.", "Battre oeufs."], ar: ["قلي البطاطا.", "خلطي البيض."], en: ["Fry potatoes.", "Beat eggs."] }
-            }
-        ];
-
+        // --- 1. CONFIGURATION CATÉGORIES (IMAGES AMÉLIORÉES) ---
         const CATS = [
-            { id: 'legume', fr: 'Légumes & Fruits', ar: 'خضروات وفواكه', en: 'Veg & Fruits', icon: '🥕' },
-            { id: 'viande', fr: 'Viandes & Poissons', ar: 'لحوم وأسماك', en: 'Meat & Fish', icon: '🥩' },
-            { id: 'epicerie', fr: 'Épicerie & Farines', ar: 'بقوليات ومؤونة', en: 'Pantry', icon: '🌾' },
-            { id: 'epice', fr: 'Épices', ar: 'توابل', en: 'Spices', icon: '🌶️' },
-            { id: 'laitage', fr: 'Crèmerie', ar: 'ألبان', en: 'Dairy', icon: '🧀' },
+            { id: 'legume', fr: 'Légumes', ar: 'خضروات', en: 'Veg', img: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=300' },
+            { id: 'viande', fr: 'Viandes', ar: 'لحوم', en: 'Meat', img: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=300' },
+            { id: 'epicerie', fr: 'Épicerie', ar: 'مؤونة', en: 'Pantry', img: 'https://images.unsplash.com/photo-1584269631736-427e5ad7940e?w=300' },
+            { id: 'epice', fr: 'Épices', ar: 'توابل', en: 'Spices', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=300' },
+            { id: 'laitage', fr: 'Crèmerie', ar: 'ألبان', en: 'Dairy', img: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=300' },
+        ];
+
+        // --- 2. BASE DE DONNÉES INGRÉDIENTS (COMPLÈTE) ---
+        const DEF_INGS = [
+            // LEGUMES
+            {id:'1',cat:'legume',fr:'Tomate',ar:'طماطم',en:'Tomato',img:'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200'},
+            {id:'2',cat:'legume',fr:'Oignon',ar:'بصل',en:'Onion',img:'https://images.unsplash.com/photo-1618512496248-a07fe83aa829?w=200'},
+            {id:'3',cat:'legume',fr:'Pomme de terre',ar:'بطاطا',en:'Potato',img:'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=200'},
+            {id:'4',cat:'legume',fr:'Ail',ar:'ثوم',en:'Garlic',img:'https://images.unsplash.com/photo-1615477210537-f81d9f8e5225?w=200'},
+            {id:'5',cat:'legume',fr:'Courgette',ar:'كوسة',en:'Zucchini',img:'https://images.unsplash.com/photo-1590052745348-185934149021?w=200'},
+            {id:'6',cat:'legume',fr:'Carotte',ar:'جزر',en:'Carrot',img:'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=200'},
+            {id:'7',cat:'legume',fr:'Piment',ar:'فلفل حار',en:'Chili',img:'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=200'},
+            {id:'8',cat:'legume',fr:'Poivron',ar:'فلفل حلو',en:'Pepper',img:'https://images.unsplash.com/photo-1563565375-f3fdf5dbc239?w=200'},
+            {id:'9',cat:'legume',fr:'Aubergine',ar:'باذنجان',en:'Eggplant',img:'https://images.unsplash.com/photo-1619864273822-0a2b02447e1d?w=200'},
+            {id:'10',cat:'legume',fr:'Citron',ar:'ليمون',en:'Lemon',img:'https://images.unsplash.com/photo-1590502593747-42a996133562?w=200'},
+            {id:'11',cat:'legume',fr:'Orange',ar:'برتقال',en:'Orange',img:'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=200'},
+            {id:'12',cat:'legume',fr:'Menthe',ar:'نعناع',en:'Mint',img:'https://images.unsplash.com/photo-1628556270448-4d4e614e4910?w=200'},
+            {id:'13',cat:'legume',fr:'Fraise',ar:'فراولة',en:'Strawberry',img:'https://images.unsplash.com/photo-1543528176-61b239494933?w=200'},
+            {id:'14',cat:'legume',fr:'Banane',ar:'موز',en:'Banana',img:'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200'},
+            {id:'15',cat:'legume',fr:'Dattes',ar:'تمر',en:'Dates',img:'https://images.unsplash.com/photo-1559837627-22f3c7e7d69f?w=200'},
+            // VIANDES
+            {id:'20',cat:'viande',fr:'Poulet',ar:'دجاج',en:'Chicken',img:'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200'},
+            {id:'21',cat:'viande',fr:'Viande Rouge',ar:'لحم',en:'Meat',img:'https://images.unsplash.com/photo-1603048297172-c92544798d5e?w=200'},
+            {id:'22',cat:'viande',fr:'Viande Hachée',ar:'لحم مفروم',en:'Minced Meat',img:'https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?w=200'},
+            {id:'23',cat:'viande',fr:'Merguez',ar:'مرقاز',en:'Sausage',img:'https://images.unsplash.com/photo-1599553538421-4f1146249557?w=200'},
+            {id:'24',cat:'viande',fr:'Oeufs',ar:'بيض',en:'Eggs',img:'https://images.unsplash.com/photo-1491524062933-cb0289261700?w=200'},
+            // EPICERIE
+            {id:'40',cat:'epicerie',fr:'Farine',ar:'فرينة',en:'Flour',img:'https://images.unsplash.com/photo-1586585571612-47d095e1925e?w=200'},
+            {id:'41',cat:'epicerie',fr:'Couscous',ar:'كسكس',en:'Couscous',img:'https://images.unsplash.com/photo-1586548688220-3162b70f074a?w=200'},
+            {id:'42',cat:'epicerie',fr:'Sucre',ar:'سكر',en:'Sugar',img:'https://images.unsplash.com/photo-1616645312019-5d15a5cb3531?w=200'},
+            {id:'43',cat:'epicerie',fr:'Riz',ar:'أرز',en:'Rice',img:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200'},
+            {id:'44',cat:'epicerie',fr:'Huile',ar:'زيت',en:'Oil',img:'https://images.unsplash.com/photo-1474979266404-7cadd91babdc?w=200'},
+            {id:'45',cat:'epicerie',fr:'Miel',ar:'عسل',en:'Honey',img:'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=200'},
+            {id:'46',cat:'epicerie',fr:'Pois Chiche',ar:'حمص',en:'Chickpeas',img:'https://images.unsplash.com/photo-1584661848529-6799042c16f0?w=200'},
+            {id:'47',cat:'epicerie',fr:'Café',ar:'قهوة',en:'Coffee',img:'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200'},
+            {id:'48',cat:'epicerie',fr:'Chocolat',ar:'شوكولاتة',en:'Chocolate',img:'https://images.unsplash.com/photo-1511381939415-e44015466834?w=200'},
+            {id:'49',cat:'epicerie',fr:'Amandes',ar:'لوز',en:'Almonds',img:'https://images.unsplash.com/photo-1508061253366-f7da158b6d6b?w=200'},
+            // EPICES
+            {id:'60',cat:'epice',fr:'Sel',ar:'ملح',en:'Salt',img:'https://images.unsplash.com/photo-1626131776934-22b62071869e?w=200'},
+            {id:'61',cat:'epice',fr:'Poivre',ar:'فلفل أسود',en:'Black Pepper',img:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200'},
+            {id:'62',cat:'epice',fr:'Cumin',ar:'كمون',en:'Cumin',img:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200'},
+            {id:'63',cat:'epice',fr:'Cannelle',ar:'قرفة',en:'Cinnamon',img:'https://images.unsplash.com/photo-1556687259-25f381c0cb1f?w=200'},
+            // LAITAGE
+            {id:'80',cat:'laitage',fr:'Lait',ar:'حليب',en:'Milk',img:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200'},
+            {id:'81',cat:'laitage',fr:'Yaourt',ar:'ياغورت',en:'Yogurt',img:'https://images.unsplash.com/photo-1562122394-b1539205562d?w=200'},
+            {id:'82',cat:'laitage',fr:'Beurre',ar:'زبدة',en:'Butter',img:'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=200'}
+        ];
+
+        // --- 3. BASE DE DONNÉES RECETTES (ÉLARGIE) ---
+        const DEF_RECS = [
+            // PLATS (ALGÉRIENS & CLASSIQUES)
+            { id: 1, type: 'plat', title: {fr:"Couscous Royal",ar:"كسكس ملكي",en:"Royal Couscous"}, img: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=800", time: "120", calories: "750", ingredients: ["41","21","20","23","6","5","46"], instructions: {fr:["Sauce rouge.","Vapeur."],ar:["مرقة.","فوري."],en:["Red sauce.","Steam."]} },
+            { id: 2, type: 'plat', title: {fr:"Chorba Frik",ar:"شربة فريك",en:"Chorba Frik"}, img: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800", time: "45", calories: "400", ingredients: ["21","1","2","12","46"], instructions: {fr:["Mijoter viande.","Tomates.","Frik."],ar:["قلي اللحم.","طماطم.","فريك."],en:["Simmer meat.","Tomatoes.","Frik."]} },
+            { id: 3, type: 'plat', title: {fr:"Frites Omelette",ar:"فريت أومليت",en:"Fries Omelet"}, img: "https://images.unsplash.com/photo-1593584785033-9c7604d0863f?w=800", time: "20", calories: "450", ingredients: ["3","24","44","60"], instructions: {fr:["Frire.","Battre oeufs."],ar:["قلي.","بيض."],en:["Fry.","Eggs."]} },
+            { id: 4, type: 'plat', title: {fr:"Chakchouka",ar:"شكشوكة",en:"Shakshuka"}, img: "https://images.unsplash.com/photo-1590412200988-a436970781fa?w=800", time: "30", calories: "350", ingredients: ["1","2","8","24","4","44"], instructions: {fr:["Sauter oignons.","Tomates.","Oeufs."],ar:["بصل.","طماطم.","بيض."],en:["Sauté onions.","Tomatoes.","Eggs."]} },
+            { id: 5, type: 'plat', title: {fr:"Dolma",ar:"دولمة",en:"Dolma"}, img: "https://images.unsplash.com/photo-1606756285524-7f2a1b5a61c3?w=800", time: "60", calories: "500", ingredients: ["5","22","3","46","63"], instructions: {fr:["Vider légumes.","Farcir.","Cuire."],ar:["حفري.","عمري.","طيبي."],en:["Hollow.","Stuff.","Cook."]} },
+            { id: 6, type: 'plat', title: {fr:"Mhadjeb",ar:"محاجب",en:"Mhadjeb"}, img: "https://images.unsplash.com/photo-1584278860047-22db9ff82bed?w=800", time: "60", calories: "400", ingredients: ["40","2","1","44"], instructions: {fr:["Pâte semoule.","Farce.","Cuire."],ar:["عجينة.","حشو.","طيبي."],en:["Dough.","Filling.","Cook."]} },
+            { id: 7, type: 'plat', title: {fr:"Rechta",ar:"رشتة",en:"Rechta"}, img: "https://images.unsplash.com/photo-1626806812404-e3c35b5a7457?w=800", time: "60", calories: "600", ingredients: ["42","20","7","46","63"], instructions: {fr:["Sauce blanche.","Vapeur pâtes."],ar:["مرقة بيضاء.","فوري."],en:["White sauce.","Steam pasta."]} },
+            { id: 8, type: 'plat', title: {fr:"Gratin Dauphinois",ar:"غراتان بطاطا",en:"Potato Gratin"}, img: "https://images.unsplash.com/photo-1567115840615-18451121d37a?w=800", time: "50", calories: "550", ingredients: ["3","80","81","4","82"], instructions: {fr:["Couper.","Cuire lait.","Gratiner."],ar:["قطعي.","حليب.","كوشة."],en:["Slice.","Milk boil.","Bake."]} },
+            
+            // BOISSONS (Liste élargie)
+            { id: 30, type: 'boisson', title: {fr:"Citronnade",ar:"شاربات",en:"Lemonade"}, img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800", time: "10", calories: "120", ingredients: ["10","42","80","12"], instructions: {fr:["Presser citron.","Eau, sucre, lait."],ar:["عصري.","ماء وسكر."],en:["Juice lemon.","Mix water/sugar."]} },
+            { id: 31, type: 'boisson', title: {fr:"Jus d'Orange",ar:"عصير برتقال",en:"Orange Juice"}, img: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=800", time: "5", calories: "100", ingredients: ["11"], instructions: {fr:["Presser."],ar:["عصري."],en:["Squeeze."]} },
+            { id: 32, type: 'boisson', title: {fr:"Thé à la Menthe",ar:"شاي بالنعناع",en:"Mint Tea"}, img: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800", time: "20", calories: "80", ingredients: ["12","42"], instructions: {fr:["Infuser thé.","Menthe et sucre."],ar:["طبخي.","نعناع وسكر."],en:["Brew tea.","Mint/sugar."]} },
+            { id: 33, type: 'boisson', title: {fr:"Smoothie Banane",ar:"عصير موز",en:"Banana Smoothie"}, img: "https://images.unsplash.com/photo-1628557044797-f21a177c37ec?w=800", time: "5", calories: "200", ingredients: ["14","80","42"], instructions: {fr:["Mixer tout."],ar:["رحي كلش."],en:["Blend all."]} },
+            { id: 34, type: 'boisson', title: {fr:"Jus de Fraise",ar:"عصير فراولة",en:"Strawberry Juice"}, img: "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=800", time: "5", calories: "150", ingredients: ["13","42","10"], instructions: {fr:["Mixer avec eau/citron."],ar:["رحي."],en:["Blend."]} },
+            { id: 35, type: 'boisson', title: {fr:"Lben / Rayeb",ar:"لبن / رايب",en:"Buttermilk"}, img: "https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=800", time: "0", calories: "100", ingredients: ["80"], instructions: {fr:["Servir frais."],ar:["بارد."],en:["Serve cold."]} },
+            { id: 36, type: 'boisson', title: {fr:"Café au Lait",ar:"قهوة حليب",en:"Latte"}, img: "https://images.unsplash.com/photo-1517701604599-bb29b5c7dd90?w=800", time: "5", calories: "80", ingredients: ["47","80","42"], instructions: {fr:["Café chaud.","Lait."],ar:["قهوة وحليب."],en:["Hot coffee.","Milk."]} },
+            { id: 37, type: 'boisson', title: {fr:"Chocolat Chaud",ar:"شوكولاطة ساخنة",en:"Hot Chocolate"}, img: "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800", time: "10", calories: "300", ingredients: ["48","80","42"], instructions: {fr:["Fondre chocolat.","Lait."],ar:["ذوبي الشكولاطة."],en:["Melt chocolate.","Milk."]} },
+            { id: 38, type: 'boisson', title: {fr:"Smoothie Datte",ar:"عصير التمر",en:"Date Smoothie"}, img: "https://images.unsplash.com/photo-1550529889-8d82a690e03e?w=800", time: "5", calories: "350", ingredients: ["15","80","49"], instructions: {fr:["Mixer dattes et lait."],ar:["مكسي التمر والحليب."],en:["Blend dates/milk."]} },
+            { id: 39, type: 'boisson', title: {fr:"Mojito Virgin",ar:"موهيتو",en:"Virgin Mojito"}, img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800", time: "5", calories: "100", ingredients: ["10","12","42"], instructions: {fr:["Citron, menthe, eau gazeuse."],ar:["قارص ونعناع."],en:["Lemon, mint, soda."]} },
+            { id: 40, type: 'boisson', title: {fr:"Jus de Carotte",ar:"عصير زرودية",en:"Carrot Juice"}, img: "https://images.unsplash.com/photo-1598460662243-7f7223631674?w=800", time: "20", calories: "120", ingredients: ["6","11","42"], instructions: {fr:["Cuire carottes.","Mixer avec orange."],ar:["غلي الزرودية.","مكسي."],en:["Boil carrots.","Blend."]} },
+
+            // DESSERTS (Liste élargie)
+            { id: 60, type: 'dessert', title: {fr:"Baghrir",ar:"بغرير",en:"Baghrir"}, img: "https://images.unsplash.com/photo-1585235882334-7d52f9540b99?w=800", time: "40", calories: "250", ingredients: ["40","41","45","82"], instructions: {fr:["Pâte liquide.","Cuire.","Miel."],ar:["عجينة.","طيبي.","عسل."],en:["Batter.","Cook.","Honey."]} },
+            { id: 61, type: 'dessert', title: {fr:"Mouskoutchou",ar:"موسكوتشو",en:"Sponge Cake"}, img: "https://images.unsplash.com/photo-1627834377411-8da5f4f09de8?w=800", time: "45", calories: "350", ingredients: ["24","42","44","40","10"], instructions: {fr:["Mélanger tout.","Four 180."],ar:["خلطي.","كوشة."],en:["Mix all.","Bake."]} },
+            { id: 62, type: 'dessert', title: {fr:"Tamina",ar:"طمينة",en:"Tamina"}, img: "https://images.unsplash.com/photo-1576023257850-252a5592bb34?w=800", time: "15", calories: "500", ingredients: ["41","45","82","63"], instructions: {fr:["Griller semoule.","Miel/Beurre."],ar:["حمصي السميد.","عسل وزبدة."],en:["Toast semolina.","Mix honey/butter."]} },
+            { id: 63, type: 'dessert', title: {fr:"Makroud",ar:"مقروط",en:"Makroud"}, img: "https://images.unsplash.com/photo-1534432182912-63863115e106?w=800", time: "120", calories: "450", ingredients: ["41","15","45","44"], instructions: {fr:["Pâte semoule.","Dattes.","Frire.","Miel."],ar:["عجينة.","غرس.","قلي.","عسل."],en:["Dough.","Dates.","Fry.","Honey."]} },
+            { id: 64, type: 'dessert', title: {fr:"Crêpes",ar:"كريب",en:"Crepes"}, img: "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=800", time: "20", calories: "200", ingredients: ["40","80","24","42","82"], instructions: {fr:["Pâte liquide.","Poêle."],ar:["خلطي.","مقلاة."],en:["Batter.","Pan."]} },
+            { id: 65, type: 'dessert', title: {fr:"Salade de Fruits",ar:"سلطة فواكه",en:"Fruit Salad"}, img: "https://images.unsplash.com/photo-1568166666-4336021626f8?w=800", time: "15", calories: "150", ingredients: ["13","14","11","42"], instructions: {fr:["Couper fruits.","Jus."],ar:["قطعي.","عصير."],en:["Cut fruits.","Juice."]} },
+            { id: 66, type: 'dessert', title: {fr:"Riz au Lait",ar:"أرز بالحليب",en:"Rice Pudding"}, img: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800", time: "40", calories: "250", ingredients: ["43","80","42","63"], instructions: {fr:["Cuire riz eau.","Ajouter lait."],ar:["غلي الروز.","حليب."],en:["Boil rice.","Add milk."]} },
+            { id: 67, type: 'dessert', title: {fr:"Sablés",ar:"صابلي",en:"Shortbread"}, img: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800", time: "60", calories: "400", ingredients: ["40","82","42","24"], instructions: {fr:["Pâte sablée.","Emporte-pièce.","Four."],ar:["عجينة.","طابع.","كوشة."],en:["Dough.","Cut.","Bake."]} },
+            { id: 68, type: 'dessert', title: {fr:"Mchawek",ar:"مشوك",en:"Almond Balls"}, img: "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=800", time: "45", calories: "350", ingredients: ["49","42","24"], instructions: {fr:["Pâte amandes.","Boules.","Four."],ar:["لوز.","كور.","كوشة."],en:["Almond dough.","Balls.","Bake."]} },
+            { id: 69, type: 'dessert', title: {fr:"Bradj",ar:"براج",en:"Semolina Date Cake"}, img: "https://images.unsplash.com/photo-1589133465330-811c76891002?w=800", time: "60", calories: "500", ingredients: ["41","15","82"], instructions: {fr:["Sandwich semoule/dattes.","Tajine."],ar:["طبقات.","طاجين."],en:["Layers.","Cook flat."]} }
         ];
 
         const TEXTS = {
-            fr: { search: "Rechercher...", find: "Voir Recettes", missing: "Manquant", have: "Complet", add: "Ajouter les manquants", empty_shop: "Liste vide", no_rec: "Aucune recette compatible (>30%)", pwd: "Mot de passe Admin:", del: "Supprimer?", save: "Enregistrer", edit: "Éditer", new: "Nouveau", admin: "Admin", back: "Retour", top_match: "TOP MATCH", empty_pantry: "Votre frigo est vide. Ajoutez des ingrédients !" },
-            ar: { search: "بحث...", find: "الوصفات", missing: "ينقصك", have: "كامل", add: "أضف النواقص", empty_shop: "القائمة فارغة", no_rec: "لا توجد وصفات مناسبة (>30%)", pwd: "كلمة المرور:", del: "حذف؟", save: "حفظ", edit: "تعديل", new: "جديد", admin: "إدارة", back: "عودة", top_match: "توافق عالي", empty_pantry: "ثلاجتك فارغة. أضف مكونات!" },
-            en: { search: "Search...", find: "See Recipes", missing: "Missing", have: "All set", add: "Add missing", empty_shop: "List empty", no_rec: "No matching recipes (>30%)", pwd: "Admin Password:", del: "Delete?", save: "Save", edit: "Edit", new: "New", admin: "Admin", back: "Back", top_match: "TOP MATCH", empty_pantry: "Your fridge is empty. Add items!" }
+            fr: { search: "Ingrédient...", find: "Voir Recettes", missing: "Manquant", have: "Complet", add: "Ajouter manquants", empty_shop: "Liste vide", no_rec: "Aucune recette (>30%)", pwd: "Mot de passe Admin:", del: "Supprimer?", save: "Enregistrer", edit: "Éditer", new: "Nouveau", admin: "Admin", back: "Retour", top_match: "TOP MATCH", empty_pantry: "Votre frigo est vide. Ajoutez des ingrédients !", clear_all: "Vider le frigo", all: "Tout" },
+            ar: { search: "مكون...", find: "الوصفات", missing: "ناقص", have: "كامل", add: "أضف النواقص", empty_shop: "القائمة فارغة", no_rec: "لا توجد وصفات (>30%)", pwd: "كلمة المرور:", del: "حذف؟", save: "حفظ", edit: "تعديل", new: "جديد", admin: "إدارة", back: "عودة", top_match: "توافق عالي", empty_pantry: "ثلاجتك فارغة. أضف مكونات!", clear_all: "إفراغ الثلاجة", all: "الكل" },
+            en: { search: "Ingredient...", find: "See Recipes", missing: "Missing", have: "All set", add: "Add missing", empty_shop: "List empty", no_rec: "No recipes (>30%)", pwd: "Admin Password:", del: "Delete?", save: "Save", edit: "Edit", new: "New", admin: "Admin", back: "Back", top_match: "TOP MATCH", empty_pantry: "Your fridge is empty. Add items!", clear_all: "Clear Fridge", all: "All" }
         };
 
         // --- MOTEUR JS ---
         const app = {
-            state: {
-                lang: 'fr',
-                tab: 'pantry',
-                pantry: [],
-                shop: [],
-                favs: [],
-                ings: [],
-                recs: [],
-                search: '',
-                cat: 'legume',
-                recFilter: 'plat',
-                tempRecIngs: [] // Pour la création de recette
-            },
+            state: { lang: 'fr', tab: 'pantry', pantry: [], shop: [], favs: [], ings: [], recs: [], search: '', cat: 'legume', recFilter: 'all', tempRecIngs: [] },
 
             init: function() {
                 try {
                     this.state.pantry = JSON.parse(localStorage.getItem('fc_pantry')) || [];
                     this.state.shop = JSON.parse(localStorage.getItem('fc_shop')) || [];
                     this.state.favs = JSON.parse(localStorage.getItem('fc_favs')) || [];
-                    this.state.ings = JSON.parse(localStorage.getItem('fc_ings')) || DEF_INGS;
-                    this.state.recs = JSON.parse(localStorage.getItem('fc_recs')) || DEF_RECS;
-                } catch(e) { console.log('Reset data'); }
+                    // Chargement Défaut si vide
+                    const savedIngs = JSON.parse(localStorage.getItem('fc_ings'));
+                    this.state.ings = (savedIngs && savedIngs.length > 0) ? savedIngs : DEF_INGS;
+                    const savedRecs = JSON.parse(localStorage.getItem('fc_recs'));
+                    this.state.recs = (savedRecs && savedRecs.length > 0) ? savedRecs : DEF_RECS;
+                } catch(e) { console.log('Reset'); }
                 this.render();
             },
 
@@ -137,11 +194,18 @@
                 this.render();
             },
 
+            // --- NAVIGATION & ACTIONS ---
             setTab: function(tab) { this.state.tab = tab; this.render(); },
             setLang: function(lang) { this.state.lang = lang; document.body.dir = lang === 'ar' ? 'rtl' : 'ltr'; this.render(); },
             setCat: function(cat) { this.state.cat = cat; this.render(); },
-            setSearch: function(val) { this.state.search = val; this.render(); },
             setRecFilter: function(f) { this.state.recFilter = f; this.render(); },
+            
+            // RECHERCHE MANUELLE
+            triggerSearch: function() {
+                const input = document.getElementById('search-input');
+                this.state.search = input.value;
+                this.render();
+            },
 
             togglePantry: function(id) {
                 const idx = this.state.pantry.indexOf(id);
@@ -150,20 +214,16 @@
                 this.save();
             },
 
-            addToShop: function(ids) {
-                ids.forEach(id => { if(!this.state.shop.includes(id)) this.state.shop.push(id); });
-                this.state.tab = 'shop';
-                this.closeModal();
-                this.save();
+            clearPantry: function() {
+                if(confirm(TEXTS[this.state.lang].clear_all + '?')) {
+                    this.state.pantry = [];
+                    this.save();
+                }
             },
 
-            toggleFav: function(id, e) {
-                if(e) e.stopPropagation();
-                const idx = this.state.favs.indexOf(id);
-                if(idx > -1) this.state.favs.splice(idx, 1);
-                else this.state.favs.push(id);
-                this.save();
-            },
+            addToShop: function(ids) { ids.forEach(id => { if(!this.state.shop.includes(id)) this.state.shop.push(id); }); this.state.tab = 'shop'; this.closeModal(); this.save(); },
+            toggleFav: function(id, e) { if(e) e.stopPropagation(); const idx = this.state.favs.indexOf(id); if(idx > -1) this.state.favs.splice(idx, 1); else this.state.favs.push(id); this.save(); },
+            toggleShop: function(id) { const idx = this.state.shop.indexOf(id); if(idx > -1) this.state.shop.splice(idx, 1); this.save(); },
 
             // --- RENDU UI ---
             render: function() {
@@ -171,7 +231,6 @@
                 const container = document.getElementById('app-container');
                 let html = '';
 
-                // Active Tab Style
                 ['pantry', 'recipes', 'shop'].forEach(t => {
                     const btn = document.getElementById('btn-'+t);
                     if(this.state.tab === t) btn.className = "flex flex-col items-center gap-1 p-2 rounded-xl text-emerald-400 bg-emerald-400/10 transition-all";
@@ -179,18 +238,26 @@
                 });
                 
                 const badge = document.getElementById('shop-badge');
-                if(this.state.shop.length > 0) { badge.innerText = this.state.shop.length; badge.classList.remove('hidden'); } 
-                else { badge.classList.add('hidden'); }
+                if(this.state.shop.length > 0) { badge.innerText = this.state.shop.length; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
 
-                // --- VUE 1 : FRIGO ---
+                // --- PANTRY ---
                 if (this.state.tab === 'pantry') {
-                    html += `<div class="p-4 sticky top-[68px] z-20 bg-slate-950"><input oninput="app.setSearch(this.value)" value="${this.state.search}" placeholder="${t.search}" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500 transition-colors"></div>`;
+                    // Barre Recherche Manuelle
+                    html += `<div class="p-4 sticky top-[68px] z-20 bg-slate-950 flex gap-2">
+                        <input id="search-input" value="${this.state.search}" placeholder="${t.search}" class="flex-1 bg-slate-900 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500 transition-colors">
+                        <button onclick="app.triggerSearch()" class="bg-emerald-600 text-white p-3 rounded-xl"><svg class="icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+                        ${this.state.pantry.length > 0 ? `<button onclick="app.clearPantry()" class="bg-red-900/50 border border-red-800 text-red-400 p-3 rounded-xl"><svg class="icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
+                    </div>`;
                     
                     if(!this.state.search) {
-                        html += `<div class="flex overflow-x-auto gap-2 px-4 pb-4 hide-scrollbar">`;
+                        html += `<div class="flex overflow-x-auto gap-3 px-4 pb-4 hide-scrollbar">`;
                         CATS.forEach(c => {
-                            const active = this.state.cat === c.id ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800';
-                            html += `<button onclick="app.setCat('${c.id}')" class="px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold ${active} transition-all">${c.icon} ${c[this.state.lang]||c.fr}</button>`;
+                            const active = this.state.cat === c.id ? 'active' : '';
+                            html += `
+                            <div onclick="app.setCat('${c.id}')" class="cat-card ${active}">
+                                <div class="cat-bg" style="background-image: url('${c.img}')"></div>
+                                <div class="cat-content text-white">${c[this.state.lang]||c.fr}</div>
+                            </div>`;
                         });
                         html += `</div>`;
                     }
@@ -203,7 +270,8 @@
                         html += `
                         <div onclick="app.togglePantry('${i.id}')" class="flex flex-col items-center gap-2 cursor-pointer group active:scale-95 transition-transform">
                             <div class="w-16 h-16 rounded-2xl border-2 ${sel ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'} overflow-hidden relative bg-slate-800 transition-all">
-                                <img src="${i.img}" class="w-full h-full object-cover">
+                                <img src="${i.img}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                <div class="hidden items-center justify-center bg-slate-800 w-full h-full absolute top-0 left-0 text-2xl">🥗</div>
                                 ${sel ? '<div class="absolute inset-0 bg-emerald-600/60 flex items-center justify-center text-white font-bold animate-in">✓</div>' : ''}
                             </div>
                             <span class="text-[10px] text-center font-bold ${sel ? 'text-emerald-400' : 'text-slate-500'} line-clamp-2 leading-tight">${i[this.state.lang]||i.fr}</span>
@@ -211,56 +279,51 @@
                     });
                     html += `</div>`;
 
-                    if(this.state.pantry.length === 0) {
-                        html += `<div class="text-center p-10 text-slate-600 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🧊</div><p>${t.empty_pantry}</p></div>`
-                    } else {
-                        html += `<div class="fixed bottom-24 left-4 right-4 z-30"><button onclick="app.setTab('recipes')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2 hover:bg-emerald-500 transition-colors animate-in">${t.find} <span class="bg-white/20 px-2 rounded-full text-xs">${this.state.pantry.length}</span></button></div>`;
-                    }
+                    if(this.state.pantry.length === 0) html += `<div class="text-center p-10 text-slate-600 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🧊</div><p>${t.empty_pantry}</p></div>`;
+                    else html += `<div class="fixed bottom-24 left-4 right-4 z-30"><button onclick="app.setTab('recipes')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2 hover:bg-emerald-500 transition-colors animate-in">${t.find} <span class="bg-white/20 px-2 rounded-full text-xs">${this.state.pantry.length}</span></button></div>`;
                 }
 
-                // --- VUE 2 : RECETTES ---
+                // --- RECETTES ---
                 else if (this.state.tab === 'recipes') {
                     html += `<div class="flex gap-2 p-4 overflow-x-auto hide-scrollbar sticky top-[68px] bg-slate-950 z-20">`;
-                    ['plat','dessert','boisson','fav'].forEach(f => {
-                        const active = this.state.recFilter === f ? 'bg-slate-800 text-emerald-400 border-emerald-500' : 'text-slate-500 border-transparent hover:text-slate-300';
-                        html += `<button onclick="app.setRecFilter('${f}')" class="flex-1 py-2 px-4 rounded-lg bg-slate-900 border text-xs font-bold capitalize transition-all whitespace-nowrap ${active}">${f}</button>`;
+                    ['all','plat','dessert','boisson','fav'].forEach(f => {
+                        const label = f === 'all' ? t.all : f;
+                        const active = this.state.recFilter === f ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-500 border border-slate-800';
+                        html += `<button onclick="app.setRecFilter('${f}')" class="flex-1 py-2 px-4 rounded-lg text-xs font-bold capitalize whitespace-nowrap transition-all ${active}">${label}</button>`;
                     });
                     html += `</div>`;
 
                     html += `<div class="space-y-4 p-4">`;
                     let list = this.state.recs;
                     if(this.state.recFilter === 'fav') list = list.filter(r => this.state.favs.includes(r.id));
-                    else list = list.filter(r => r.type === this.state.recFilter);
+                    else if(this.state.recFilter !== 'all') list = list.filter(r => r.type === this.state.recFilter);
 
-                    // ALGORITHME MATCHING & FILTRAGE 30%
                     const scored = list.map(r => {
                         const have = r.ingredients.filter(id => this.state.pantry.includes(id));
                         const missing = r.ingredients.filter(id => !this.state.pantry.includes(id));
                         const score = r.ingredients.length ? Math.round((have.length / r.ingredients.length) * 100) : 0;
                         return { ...r, score, missing };
                     })
-                    .filter(r => r.score >= 30) // FILTRE 30%
+                    .filter(r => r.score >= 30)
                     .sort((a,b) => b.score - a.score);
 
-                    if(scored.length === 0) {
-                        html += `<div class="text-center py-20 text-slate-500 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🤷‍♂️</div><p>${t.no_rec}</p></div>`;
-                    } else {
+                    if(scored.length === 0) html += `<div class="text-center py-20 text-slate-500 flex flex-col items-center gap-4"><div class="text-4xl opacity-50">🤷‍♂️</div><p>${t.no_rec}</p></div>`;
+                    else {
                         scored.forEach(r => {
                             const isFav = this.state.favs.includes(r.id);
                             html += `
                             <div onclick="app.openRec(${r.id})" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex gap-3 relative overflow-hidden group cursor-pointer hover:border-slate-700 transition-all">
                                 <div class="w-24 h-24 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative">
-                                    <img src="${r.img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                    <img src="${r.img}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                    <div class="hidden items-center justify-center bg-slate-800 w-full h-full absolute top-0 left-0 text-3xl">🥘</div>
                                     <div class="absolute bottom-1 right-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 rounded ${r.score >= 70 ? 'bg-emerald-600' : ''}">${r.score}%</div>
                                 </div>
                                 <div class="flex-1 min-w-0 flex flex-col justify-center">
                                     <div class="flex justify-between items-start">
                                         <h3 class="text-slate-200 font-bold truncate pr-4 text-lg">${r.title[this.state.lang]||r.title.fr}</h3>
-                                        <button onclick="app.toggleFav(${r.id}, event)" class="${isFav ? 'text-red-500' : 'text-slate-600 hover:text-red-400'}"><svg class="icon"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="${isFav?'currentColor':'none'}"/></svg></button>
+                                        <button onclick="app.toggleFav(${r.id}, event)" class="${isFav ? 'text-red-500' : 'text-slate-600 hover:text-red-400'}">♥</button>
                                     </div>
-                                    
                                     ${r.score >= 70 ? `<div class="text-[10px] text-emerald-400 font-bold mb-1 pulse-badge w-fit px-1.5 py-0.5 rounded bg-emerald-900/20 border border-emerald-900/50">🔥 ${t.top_match}</div>` : ''}
-                                    
                                     <div class="text-xs text-slate-500 mb-2">${r.time} min • ${r.calories} kcal</div>
                                     <div class="flex gap-1 overflow-hidden h-5 items-center">
                                         ${r.missing.length === 0 ? `<span class="text-[10px] text-emerald-400 bg-emerald-900/20 px-2 rounded border border-emerald-900/50">✓ ${t.have}</span>` : 
@@ -276,251 +339,84 @@
                     html += `</div>`;
                 }
 
-                // --- VUE 3 : COURSES ---
+                // --- SHOP ---
                 else if (this.state.tab === 'shop') {
                     html += `<div class="p-4">
                         <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center mb-6 shadow-lg">
                             <div><h2 class="text-xl font-bold text-white">Liste</h2><p class="text-xs text-slate-500">${this.state.shop.length} items</p></div>
                             <div class="flex gap-2">
-                                <button onclick="app.shareShop()" class="bg-emerald-600/20 text-emerald-400 px-3 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600/30 transition">Partager</button>
-                                <button onclick="app.state.shop=[]; app.save()" class="bg-red-600/10 text-red-400 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-600/20 transition">Vider</button>
+                                <button onclick="app.shareShop()" class="bg-emerald-600/20 text-emerald-400 px-3 py-2 rounded-lg text-xs font-bold">Partager</button>
+                                <button onclick="app.state.shop=[]; app.save()" class="bg-red-600/10 text-red-400 px-3 py-2 rounded-lg text-xs font-bold">Vider</button>
                             </div>
                         </div>
                         <div class="space-y-2">`;
-                    
                     if(this.state.shop.length === 0) html += `<div class="text-center py-20 text-slate-600 border-2 border-dashed border-slate-800 rounded-3xl">${t.empty_shop}</div>`;
-                    
                     this.state.shop.forEach(id => {
-                        html += `
-                        <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 slide-up">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <span class="text-slate-300 font-medium">${this.getIngName(id)}</span>
-                            </div>
+                        html += `<div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 slide-up">
+                            <div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-slate-300 font-medium">${this.getIngName(id)}</span></div>
                             <button onclick="app.toggleShop('${id}')" class="text-slate-500 hover:text-red-400">✕</button>
                         </div>`;
                     });
                     html += `</div></div>`;
                 }
-
                 container.innerHTML = html;
             },
 
-            toggleShop: function(id) {
-                const idx = this.state.shop.indexOf(id);
-                if(idx > -1) this.state.shop.splice(idx, 1);
-                this.save();
-            },
-
-            // --- ADMIN & MODALS ---
-            getIngName: function(id) {
-                const i = this.state.ings.find(x => x.id === id);
-                return i ? (i[this.state.lang] || i.fr) : id;
-            },
-
+            // --- HELPERS ---
+            getIngName: function(id) { const i = this.state.ings.find(x => x.id === id); return i ? (i[this.state.lang] || i.fr) : id; },
             openRec: function(id) {
-                const r = this.state.recs.find(x => x.id === id);
-                if(!r) return;
+                const r = this.state.recs.find(x => x.id === id); if(!r) return;
                 const t = TEXTS[this.state.lang];
                 const missing = r.ingredients.filter(id => !this.state.pantry.includes(id));
-                
-                let modalHtml = `
-                <div class="relative min-h-screen bg-slate-950 pb-10">
+                let html = `<div class="relative min-h-screen bg-slate-950 pb-10">
                     <div class="h-72 relative">
-                        <img src="${r.img}" class="w-full h-full object-cover">
+                        <img src="${r.img}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="hidden items-center justify-center bg-slate-800 w-full h-full absolute top-0 left-0 text-4xl">🥘</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent"></div>
-                        <button onclick="app.closeModal()" class="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full backdrop-blur border border-white/10">←</button>
+                        <button onclick="app.closeModal()" class="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full backdrop-blur">←</button>
                         <div class="absolute bottom-4 left-4 right-4">
-                            <h2 class="text-3xl font-black text-white leading-tight mb-2 drop-shadow-lg">${r.title[this.state.lang]||r.title.fr}</h2>
-                            <div class="flex gap-2 text-sm text-slate-300">
-                                <span class="bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 backdrop-blur">${r.time} min</span>
-                                <span class="bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 backdrop-blur">${r.calories} kcal</span>
-                            </div>
+                            <h2 class="text-3xl font-black text-white mb-2">${r.title[this.state.lang]||r.title.fr}</h2>
+                            <div class="flex gap-2 text-sm text-slate-300"><span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.time} min</span><span class="bg-slate-900/80 px-2 py-1 rounded border border-slate-700">${r.calories} kcal</span></div>
                         </div>
                     </div>
-                    <div class="p-6 max-w-lg mx-auto">
-                        ${missing.length > 0 ? `<button onclick='app.addToShop(${JSON.stringify(missing)})' class="w-full bg-red-600/20 text-red-200 border border-red-600/30 py-3 rounded-xl font-bold mb-8 hover:bg-red-600/30 transition">+ ${t.add} (${missing.length})</button>` : ''}
-                        
+                    <div class="p-6">
+                        ${missing.length > 0 ? `<button onclick='app.addToShop(${JSON.stringify(missing)})' class="w-full bg-red-600/20 text-red-200 border border-red-600/30 py-3 rounded-xl font-bold mb-8">+ ${t.add} (${missing.length})</button>` : ''}
                         <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4 border-b border-slate-800 pb-2">Ingrédients</h3>
-                        <div class="space-y-2 mb-8">
-                            ${r.ingredients.map(id => {
-                                const has = this.state.pantry.includes(id);
-                                return `<div class="flex items-center gap-3 p-3 rounded-xl border ${has ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-100' : 'bg-slate-900 border-slate-800 text-slate-500'}">
-                                    <div class="w-5 h-5 rounded-full flex items-center justify-center ${has ? 'bg-emerald-500 text-white' : 'bg-slate-700'}">${has ? '✓' : ''}</div>
-                                    <span>${this.getIngName(id)}</span>
-                                </div>`
-                            }).join('')}
-                        </div>
-
+                        <div class="space-y-2 mb-8">${r.ingredients.map(id => { const has = this.state.pantry.includes(id); return `<div class="flex items-center gap-3 p-3 rounded-xl border ${has ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-100' : 'bg-slate-900 border-slate-800 text-slate-500'}"><div class="w-5 h-5 rounded-full flex items-center justify-center ${has ? 'bg-emerald-500 text-white' : 'bg-slate-700'}">${has ? '✓' : ''}</div><span>${this.getIngName(id)}</span></div>` }).join('')}</div>
                         <h3 class="text-emerald-500 font-bold uppercase text-xs tracking-widest mb-4 border-b border-slate-800 pb-2">Instructions</h3>
-                        <div class="space-y-6 border-l-2 border-slate-800 pl-6 ml-2">
-                            ${(r.instructions[this.state.lang]||r.instructions.fr).map((s,i) => `<div class="relative text-slate-300 leading-relaxed"><span class="absolute -left-[35px] w-8 h-8 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full text-xs font-bold text-emerald-500 shadow-sm">${i+1}</span>${s}</div>`).join('')}
-                        </div>
+                        <div class="space-y-6 border-l-2 border-slate-800 pl-6 ml-2">${(r.instructions[this.state.lang]||r.instructions.fr).map((s,i) => `<div class="relative text-slate-300"><span class="absolute -left-[35px] w-8 h-8 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full text-xs font-bold text-emerald-500">${i+1}</span>${s}</div>`).join('')}</div>
                     </div>
                 </div>`;
-                
-                const m = document.getElementById('modal-container');
-                m.innerHTML = modalHtml;
-                m.classList.remove('hidden');
+                const m = document.getElementById('modal-container'); m.innerHTML = html; m.classList.remove('hidden');
             },
-
-            closeModal: function() {
-                document.getElementById('modal-container').classList.add('hidden');
-                this.state.tempRecIngs = []; // Reset temp logic
-            },
-
-            shareShop: function() {
-                const txt = "🛒 Liste:\n" + this.state.shop.map(id => "- " + this.getIngName(id)).join('\n');
-                navigator.clipboard.writeText(txt);
-                alert("Copié !");
-            },
-
+            closeModal: function() { document.getElementById('modal-container').classList.add('hidden'); this.state.tempRecIngs = []; },
+            shareShop: function() { const txt = "🛒 Liste:\n" + this.state.shop.map(id => "- " + this.getIngName(id)).join('\n'); navigator.clipboard.writeText(txt); alert("Copié !"); },
+            
             // --- ADMIN ---
-            openAdmin: function() {
-                const p = prompt(TEXTS[this.state.lang].pwd);
-                if(p === 'admin123') {
-                    this.renderAdmin('ings');
-                } else if(p) alert('Erreur');
-            },
-
+            openAdmin: function() { const p = prompt(TEXTS[this.state.lang].pwd); if(p === 'admin123') this.renderAdmin('ings'); else if(p) alert('Erreur'); },
             renderAdmin: function(tab) {
-                const m = document.getElementById('modal-container');
-                m.classList.remove('hidden');
+                const m = document.getElementById('modal-container'); m.classList.remove('hidden');
+                let html = `<div class="bg-slate-950 min-h-screen p-4 text-white"><div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4"><h2 class="text-xl font-bold text-emerald-500">Admin</h2><button onclick="app.closeModal()">✕</button></div>
+                <div class="flex gap-2 mb-6"><button onclick="app.renderAdmin('ings')" class="flex-1 py-2 rounded font-bold ${tab==='ings'?'bg-emerald-600':'bg-slate-800'}">Ing</button><button onclick="app.renderAdmin('recs')" class="flex-1 py-2 rounded font-bold ${tab==='recs'?'bg-emerald-600':'bg-slate-800'}">Rec</button><button onclick="app.renderAdmin('data')" class="flex-1 py-2 rounded font-bold ${tab==='data'?'bg-emerald-600':'bg-slate-800'}">Data</button></div>`;
                 
-                // Header Admin
-                let html = `<div class="bg-slate-950 min-h-screen p-4 text-white">
-                    <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                        <h2 class="text-xl font-bold text-emerald-500">Admin</h2>
-                        <button onclick="app.closeModal()">✕</button>
-                    </div>
-                    <div class="flex gap-2 mb-6">
-                        <button onclick="app.renderAdmin('ings')" class="flex-1 py-2 rounded font-bold ${tab==='ings'?'bg-emerald-600':'bg-slate-800'}">Ingrédients</button>
-                        <button onclick="app.renderAdmin('recs')" class="flex-1 py-2 rounded font-bold ${tab==='recs'?'bg-emerald-600':'bg-slate-800'}">Recettes</button>
-                        <button onclick="app.renderAdmin('data')" class="flex-1 py-2 rounded font-bold ${tab==='data'?'bg-emerald-600':'bg-slate-800'}">Data</button>
-                    </div>`;
-
-                // --- ADMIN: INGRÉDIENTS ---
                 if (tab === 'ings') {
-                    html += `<form onsubmit="event.preventDefault(); app.addIng(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4">
-                        <input name="fr" placeholder="Nom FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
-                        <input name="ar" placeholder="Nom AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
-                        <select name="cat" class="bg-slate-950 p-2 rounded border border-slate-700">${CATS.map(c=>`<option value="${c.id}">${c.fr}</option>`).join('')}</select>
-                        <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
-                        <button class="bg-emerald-600 py-2 rounded font-bold">Ajouter Ingrédient</button>
-                    </form>
-                    <div class="space-y-2 pb-10">
-                        ${this.state.ings.map(i => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${i.img}" class="w-8 h-8 rounded bg-slate-800"><span>${i.fr}</span></div><button onclick="app.delIng('${i.id}')" class="text-red-400">🗑</button></div>`).join('')}
-                    </div>`;
+                    html += `<form onsubmit="event.preventDefault(); app.addIng(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4"><div class="grid grid-cols-3 gap-2"><input name="fr" placeholder="FR" class="bg-slate-950 p-2 rounded border border-slate-700" required><input name="ar" placeholder="AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required><input name="en" placeholder="EN" class="bg-slate-950 p-2 rounded border border-slate-700" required></div><select name="cat" class="bg-slate-950 p-2 rounded border border-slate-700">${CATS.map(c=>`<option value="${c.id}">${c.fr}</option>`).join('')}</select><input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700"><button class="bg-emerald-600 py-2 rounded font-bold">Ajouter</button></form><div class="space-y-2 pb-10">${this.state.ings.map(i => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${i.img}" class="w-8 h-8 rounded bg-slate-800" onerror="this.style.display='none'"><span>${i.fr}</span></div><button onclick="app.delIng('${i.id}')" class="text-red-400">🗑</button></div>`).join('')}</div>`;
+                } else if (tab === 'recs') {
+                    html += `<form onsubmit="event.preventDefault(); app.addRec(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4 text-sm"><div class="grid grid-cols-3 gap-2"><input name="fr" placeholder="Titre FR" class="bg-slate-950 p-2 rounded border border-slate-700" required><input name="ar" placeholder="AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required><input name="en" placeholder="EN" class="bg-slate-950 p-2 rounded border border-slate-700" required></div><div class="grid grid-cols-3 gap-2"><input name="time" placeholder="Min" class="bg-slate-950 p-2 rounded border border-slate-700"><input name="cal" placeholder="Kcal" class="bg-slate-950 p-2 rounded border border-slate-700"><select name="type" class="bg-slate-950 p-2 rounded border border-slate-700"><option value="plat">Plat</option><option value="dessert">Dessert</option><option value="boisson">Boisson</option></select></div><input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700"><div class="text-xs text-slate-400 mt-2">Ingrédients:</div><div class="h-32 overflow-y-auto grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded border border-slate-700">${this.state.ings.map(i => `<div onclick="app.toggleTempIng('${i.id}', this)" class="p-1 rounded cursor-pointer truncate bg-slate-800 text-slate-400 text-xs">${i.fr}</div>`).join('')}</div><div class="grid grid-cols-3 gap-2 mt-2"><textarea name="inst_fr" placeholder="Inst FR" class="bg-slate-950 p-2 rounded border border-slate-700 h-20 text-xs"></textarea><textarea name="inst_ar" placeholder="Inst AR" class="bg-slate-950 p-2 rounded border border-slate-700 h-20 text-xs text-right"></textarea><textarea name="inst_en" placeholder="Inst EN" class="bg-slate-950 p-2 rounded border border-slate-700 h-20 text-xs"></textarea></div><button class="bg-emerald-600 py-2 rounded font-bold mt-2">Ajouter</button></form><div class="space-y-2 pb-10">${this.state.recs.map(r => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${r.img}" class="w-8 h-8 rounded bg-slate-800" onerror="this.style.display='none'"><span class="truncate max-w-[150px] text-xs">${r.title.fr}</span></div><button onclick="app.delRec(${r.id})" class="text-red-400">🗑</button></div>`).join('')}</div>`;
+                } else if (tab === 'data') {
+                    html += `<div class="bg-slate-900 p-4 rounded border border-slate-800 space-y-4"><div><h3 class="font-bold text-emerald-400 mb-2">Import JSON</h3><input type="file" onchange="app.handleFile(this)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700"/></div><hr class="border-slate-800"><div><h3 class="font-bold text-blue-400 mb-2">Export JSON</h3><button onclick="app.exportData()" class="bg-blue-600 px-4 py-2 rounded text-sm font-bold w-full">Télécharger</button></div><hr class="border-slate-800"><button onclick="localStorage.clear(); location.reload()" class="bg-red-900/50 text-red-400 px-4 py-2 rounded text-sm font-bold w-full border border-red-900">Reset Total</button></div>`;
                 }
-
-                // --- ADMIN: RECETTES (MANUEL) ---
-                else if (tab === 'recs') {
-                    html += `<form onsubmit="event.preventDefault(); app.addRec(this)" class="grid gap-2 bg-slate-900 p-4 rounded border border-slate-800 mb-4 text-sm">
-                        <input name="fr" placeholder="Titre FR" class="bg-slate-950 p-2 rounded border border-slate-700" required>
-                        <input name="ar" placeholder="Titre AR" class="bg-slate-950 p-2 rounded border border-slate-700 text-right" required>
-                        <div class="grid grid-cols-3 gap-2">
-                            <input name="time" placeholder="Min" class="bg-slate-950 p-2 rounded border border-slate-700">
-                            <input name="cal" placeholder="Kcal" class="bg-slate-950 p-2 rounded border border-slate-700">
-                            <select name="type" class="bg-slate-950 p-2 rounded border border-slate-700"><option value="plat">Plat</option><option value="dessert">Dessert</option><option value="boisson">Boisson</option></select>
-                        </div>
-                        <input name="img" placeholder="URL Image" class="bg-slate-950 p-2 rounded border border-slate-700">
-                        
-                        <div class="text-xs text-slate-400 mt-2">Ingrédients:</div>
-                        <div class="h-32 overflow-y-auto grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded border border-slate-700" id="admin-ing-list">
-                            ${this.state.ings.map(i => `<div onclick="app.toggleTempIng('${i.id}', this)" class="p-1 rounded cursor-pointer truncate bg-slate-800 text-slate-400 text-xs">${i.fr}</div>`).join('')}
-                        </div>
-
-                        <textarea name="inst_fr" placeholder="Instructions FR (séparer par .)" class="bg-slate-950 p-2 rounded border border-slate-700 mt-2 h-20"></textarea>
-                        <button class="bg-emerald-600 py-2 rounded font-bold mt-2">Ajouter Recette</button>
-                    </form>
-                    <div class="space-y-2 pb-10">
-                        ${this.state.recs.map(r => `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800"><div class="flex items-center gap-2"><img src="${r.img}" class="w-8 h-8 rounded bg-slate-800"><span class="truncate max-w-[150px] text-xs">${r.title.fr}</span></div><button onclick="app.delRec(${r.id})" class="text-red-400">🗑</button></div>`).join('')}
-                    </div>`;
-                }
-
-                // --- ADMIN: DATA (IMPORT/EXPORT) ---
-                else if (tab === 'data') {
-                    html += `<div class="bg-slate-900 p-4 rounded border border-slate-800 space-y-4">
-                        <div>
-                            <h3 class="font-bold text-emerald-400 mb-2">Importer un fichier JSON</h3>
-                            <input type="file" onchange="app.handleFile(this)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700"/>
-                            <p class="text-xs text-slate-500 mt-2">Le fichier doit contenir { "ingredients": [], "recipes": [] }</p>
-                        </div>
-                        <hr class="border-slate-800">
-                        <div>
-                            <h3 class="font-bold text-blue-400 mb-2">Exporter les données</h3>
-                            <button onclick="app.exportData()" class="bg-blue-600 px-4 py-2 rounded text-sm font-bold w-full">Télécharger backup.json</button>
-                        </div>
-                        <hr class="border-slate-800">
-                        <button onclick="localStorage.clear(); location.reload()" class="bg-red-900/50 text-red-400 px-4 py-2 rounded text-sm font-bold w-full border border-red-900">Reset Total (Attention)</button>
-                    </div>`;
-                }
-
-                html += `</div>`;
-                m.innerHTML = html;
+                html += `</div>`; m.innerHTML = html;
             },
-
-            // --- ADMIN LOGIC ---
-            addIng: function(form) {
-                const newIng = {
-                    id: Date.now().toString(),
-                    fr: form.fr.value, ar: form.ar.value, en: form.fr.value,
-                    cat: form.cat.value, img: form.img.value || 'https://via.placeholder.com/150'
-                };
-                this.state.ings.push(newIng);
-                this.save();
-                this.renderAdmin('ings');
-            },
-            delIng: function(id) { if(confirm('Supprimer?')) { this.state.ings = this.state.ings.filter(x=>x.id!==id); this.save(); this.renderAdmin('ings'); } },
-
-            toggleTempIng: function(id, el) {
-                const idx = this.state.tempRecIngs.indexOf(id);
-                if(idx > -1) { this.state.tempRecIngs.splice(idx, 1); el.classList.remove('bg-emerald-600', 'text-white'); el.classList.add('bg-slate-800', 'text-slate-400'); }
-                else { this.state.tempRecIngs.push(id); el.classList.remove('bg-slate-800', 'text-slate-400'); el.classList.add('bg-emerald-600', 'text-white'); }
-            },
-
-            addRec: function(form) {
-                const newRec = {
-                    id: Date.now(),
-                    type: form.type.value,
-                    title: { fr: form.fr.value, ar: form.ar.value, en: form.fr.value },
-                    img: form.img.value || 'https://via.placeholder.com/150',
-                    time: form.time.value || '30', calories: form.cal.value || '500',
-                    ingredients: [...this.state.tempRecIngs],
-                    instructions: { fr: form.inst_fr.value.split('.'), ar: [], en: [] }
-                };
-                this.state.recs.push(newRec);
-                this.state.tempRecIngs = [];
-                this.save();
-                this.renderAdmin('recs');
-            },
-            delRec: function(id) { if(confirm('Supprimer?')) { this.state.recs = this.state.recs.filter(x=>x.id!==id); this.save(); this.renderAdmin('recs'); } },
-
-            handleFile: function(input) {
-                const file = input.files[0];
-                if(!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if(data.ingredients) this.state.ings = [...this.state.ings, ...data.ingredients];
-                        if(data.recipes) this.state.recs = [...this.state.recs, ...data.recipes];
-                        this.save();
-                        alert('Import réussi !');
-                        this.renderAdmin('data');
-                    } catch(err) { alert('Fichier invalide'); }
-                };
-                reader.readAsText(file);
-            },
-
-            exportData: function() {
-                const data = { ingredients: this.state.ings, recipes: this.state.recs };
-                const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url; a.download = "frigochef_backup.json";
-                a.click();
-            }
+            
+            // --- ADMIN HELPERS ---
+            addIng: function(f) { this.state.ings.push({id:Date.now().toString(), fr:f.fr.value, ar:f.ar.value, en:f.en.value, cat:f.cat.value, img:f.img.value}); this.save(); this.renderAdmin('ings'); },
+            delIng: function(id) { if(confirm('Sur?')) { this.state.ings = this.state.ings.filter(x=>x.id!==id); this.save(); this.renderAdmin('ings'); } },
+            addRec: function(f) { this.state.recs.push({id:Date.now(), type:f.type.value, title:{fr:f.fr.value,ar:f.ar.value,en:f.en.value}, img:f.img.value, time:f.time.value||'30', calories:f.cal.value||'500', ingredients:[...this.state.tempRecIngs], instructions:{fr:f.inst_fr.value.split('.'), ar:f.inst_ar.value.split('.'), en:f.inst_en.value.split('.')}}); this.state.tempRecIngs=[]; this.save(); this.renderAdmin('recs'); },
+            delRec: function(id) { if(confirm('Sur?')) { this.state.recs = this.state.recs.filter(x=>x.id!==id); this.save(); this.renderAdmin('recs'); } },
+            toggleTempIng: function(id, el) { const idx = this.state.tempRecIngs.indexOf(id); if(idx>-1) { this.state.tempRecIngs.splice(idx,1); el.classList.remove('bg-emerald-600','text-white'); el.classList.add('bg-slate-800','text-slate-400'); } else { this.state.tempRecIngs.push(id); el.classList.remove('bg-slate-800','text-slate-400'); el.classList.add('bg-emerald-600','text-white'); } },
+            handleFile: function(input) { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(d.ingredients) this.state.ings = [...this.state.ings, ...d.ingredients]; if(d.recipes) this.state.recs = [...this.state.recs, ...d.recipes]; this.save(); alert('OK'); this.renderAdmin('data'); } catch(err) { alert('Error'); } }; r.readAsText(f); },
+            exportData: function() { const d = {ingredients:this.state.ings, recipes:this.state.recs}; const b = new Blob([JSON.stringify(d)], {type:"application/json"}); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "data.json"; a.click(); }
         };
 
         // Lancement
