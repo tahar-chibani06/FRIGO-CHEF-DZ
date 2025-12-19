@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name_fr": "Salade Niçoise",
+    "name_ar": "سلطة نيسواز",
+    "name_en": "Nicoise Salad",
+    "category": "Salades",
+    "image_url": "assets/recettes/salade_nicoise.png",
+    "time": "20 min",
+    "difficulty": "Facile",
+    "ingredient_ids": [1, 45, 42, 15, 96, 2, 85, 60],
+    "description": "Une salade fraîche avec thon, oeufs et légumes."
+  },
+  {
+    "id": 2,
+    "name_fr": "Omelette au Fromage",
+    "name_ar": "أومليت بالجبن",
+    "name_en": "Cheese Omelet",
+    "category": "Petit Déjeuner",
+    "image_url": "assets/recettes/omelette.png",
+    "time": "10 min",
+    "difficulty": "Facile",
+    "ingredient_ids": [45, 50, 49, 60, 69],
+    "description": "Une omelette fondante au fromage râpé."
+  },
+  {
+    "id": 3,
+    "name_fr": "Pâtes à la Bolognaise",
+    "name_ar": "معكرونة بولونيز",
+    "name_en": "Pasta Bolognese",
+    "category": "Plats",
+    "image_url": "assets/recettes/pates_bolognaise.png",
+    "time": "45 min",
+    "difficulty": "Moyen",
+    "ingredient_ids": [55, 37, 1, 2, 3, 85, 60, 69, 81, 82],
+    "description": "Pâtes classiques avec une sauce tomate à la viande."
+  },
+  {
+    "id": 4,
+    "name_fr": "Chakchouka",
+    "name_ar": "شكشوكة",
+    "name_en": "Shakshuka",
+    "category": "Plats",
+    "image_url": "assets/recettes/chakchouka.png",
+    "time": "30 min",
+    "difficulty": "Facile",
+    "ingredient_ids": [1, 7, 8, 2, 3, 45, 85, 72, 70],
+    "description": "Un plat traditionnel de poivrons et tomates aux oeufs."
+  },
+  {
+    "id": 5,
+    "name_fr": "Salade de Fruits",
+    "name_ar": "سلطة فواكه",
+    "name_en": "Fruit Salad",
+    "category": "Desserts",
+    "image_url": "assets/recettes/salade_fruits.png",
+    "time": "15 min",
+    "difficulty": "Facile",
+    "ingredient_ids": [21, 22, 23, 25, 59, 95],
+    "description": "Un mélange vitaminé de fruits de saison."
+  },
+  {
+    "id": 6,
+    "name_fr": "Purée de Pommes de Terre",
+    "name_ar": "بطاطا مهروسة",
+    "name_en": "Mashed Potatoes",
+    "category": "Accompagnement",
+    "image_url": "assets/recettes/puree.png",
+    "time": "25 min",
+    "difficulty": "Facile",
+    "ingredient_ids": [4, 46, 49, 60, 69, 73],
+    "description": "Purée onctueuse au beurre et au lait."
+  }
+]
